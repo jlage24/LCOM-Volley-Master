@@ -67,15 +67,15 @@ We declare that:
 4. We have not used AI tools to generate complete solutions that we present as entirely our own unaided work, and we have avoided plagiarism, whether from AI outputs or other sources.  
 5. If asked, we will provide details of which tools we used, for which files or parts of the project, and how we verified and adapted their outputs.
 
-Signed: `<student name>`, `<student name>`, `<student name>`, `<student name>`  
-Date: `<date>`
+Signed: `David Pinto`, `João Lage`, `Luís Torrão`, `Mafalda Pacheco`  
+Date: `24/02/2026`
 
 ## Authors and acknowledgment
 
-LCOM Project for group GRUPO_2LEIC<m><n>_<p>.
+LCOM Project for group GRUPO_2LEIC15_5.
 Group members:
 
-<first name> <family name> (<email address>)
-<first name> <family name> (<email address>)
-<first name> <family name> (<email address>)
-<first name> <family name> (<email address>)
+David Pinto (up202404233@up.pt)
+João Lage (up202406458@up.pt)
+Luís Torrão (up202406471@up.pt)
+Mafalda Pacheco (up202406162@up.pt)
