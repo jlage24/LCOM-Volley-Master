@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include ".minix-src/include/lcom/lcf.h"
 
 typedef struct {
   uint8_t day;
