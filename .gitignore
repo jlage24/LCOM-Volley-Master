@@ -1,0 +1,16 @@
+.vscode/
+.minix-src/
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.app
+*.d
+*.gch
+*.pch
+bin/
+build/
