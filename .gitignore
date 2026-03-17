@@ -14,3 +14,6 @@
 *.pch
 bin/
 build/
+lab1
+lab2
+*.d
