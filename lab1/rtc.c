@@ -21,7 +21,7 @@ int rtc_read_date(rtc_date *date) {
   do {
     if (sys_outb(RTC_ADDR_REG, RTC_REG_A) != OK) return -1;
     if (sys_inb(RTC_DATA_REG, &reg_a)     != OK) return -1;
-    tickdelay(micros_to_ticks(100));
+    tickdelay(micros_to_ticks(1000));
   } while (reg_a & RTC_UIP_MSK);
   uint32_t day, month, year;
   if (sys_outb(RTC_ADDR_REG, RTC_REG_DAY)   != OK) return -1;

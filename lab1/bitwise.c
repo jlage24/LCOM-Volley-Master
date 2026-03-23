@@ -27,7 +27,7 @@ uint8_t mask(int pos, ...) {
     uint8_t result = 0;
     int bit = pos;
     while (bit != MSK_END) {
-        result |= (1 << bit);
+        result = set(result, bit);  
         bit = va_arg(args, int);
     }
     va_end(args);
