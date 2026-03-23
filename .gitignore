@@ -35,6 +35,7 @@ experiment/io_experiment
 .LSOverrides
 
 # Editor artifacts
+.minix-src/
 .vscode/
 *.swp
 *.swo
