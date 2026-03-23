@@ -1,19 +1,50 @@
-.vscode/
-.minix-src/
+# Compiled binaries and executables
+# Ignore compiled binaries inside each lab folder
+lab1/lab1
+lab2/lab2
+lab3/lab3
+lab4/lab4
+lab5/lab5
+proj/proj
+experiment/io_experiment
+
+# Object files
 *.o
-*.obj
 *.a
 *.so
-*.dll
-*.dylib
-*.exe
+
+# Static libraries
 *.out
-*.app
+
+# C dependency files
 *.d
-*.gch
-*.pch
-bin/
-build/
-lab1
-lab2
-*.d
+
+# VirtualBox / VM artifacts
+*.vbox
+*.vbox-prev
+*.vdi
+*.vmdk
+*.ovf
+*.ova
+*.iso
+*.log
+
+# macOS junk
+.DS_Store
+.AppleDouble
+.LSOverrides
+
+# Editor artifacts
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+
+# Shared folder temp files
+shared/
+
+# Build artifacts
+*.bin
+*.elf
+*.map
