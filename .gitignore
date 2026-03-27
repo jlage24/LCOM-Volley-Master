@@ -18,6 +18,7 @@ experiment/io_experiment
 
 # C dependency files
 *.d
+.depend
 
 # VirtualBox / VM artifacts
 *.vbox
@@ -49,3 +50,7 @@ shared/
 *.bin
 *.elf
 *.map
+
+# LCF logs
+trace.txt
+output.txt
