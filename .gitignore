@@ -19,6 +19,7 @@ experiment/io_experiment
 # C dependency files
 *.d
 .depend
+.gdbinit
 
 # VirtualBox / VM artifacts
 *.vbox
