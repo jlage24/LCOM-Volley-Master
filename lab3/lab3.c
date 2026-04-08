@@ -32,6 +32,26 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+void process_scancode(uint8_t current_scancode, uint8_t *bytes, uint8_t *size) {
+  if (current_scancode == TWO_BYTE_PREFIX) {
+    // First byte of a two byte scancode
+    bytes[0] = current_scancode;
+    *size = 2;
+  } else {
+    if (*size == 2) {
+      // Second byte of a two byte scancode
+      bytes[1] = current_scancode;
+    } else {
+      // It's a one byte scancode
+      bytes[0] = current_scancode;
+    }
+    /* Check MSB to determine if it's a Makecode or a Breakcode. If bit 7 is 0, it's a makecode. Else it's a breakcode. */
+    bool make = !(current_scancode & BIT(7));
+    kbd_print_scancode(make, *size, bytes);
+    *size = 1; // reset the size for the next scancode
+  }
+}
+
 int(kbd_test_scan)() {
   int ipc_status, r;
   message msg;
@@ -42,11 +62,10 @@ int(kbd_test_scan)() {
   // Variables for scancode's processing
   uint8_t bytes[2];
   uint8_t size = 1;
-  bool make;
   uint8_t current_scancode = 0;
   // Subscribe to keyboard interrupts
   if (sys_irqsetpolicy(1, IRQ_REENABLE | IRQ_EXCLUSIVE, &kbc_hook_id) != 0) {
-    printf("There was an error while subscribing keyboard interruptions\n");
+    printf("There was an error while subscribing keyboard interrupts \n");
     return 1;
   }
   // The loop will continue until the scancode is the Breakcode for ESC
@@ -61,25 +80,9 @@ int(kbd_test_scan)() {
             case HARDWARE: /* hardware interrupt notification */
                 if (msg.m_notify.interrupts & irq_set) { /* subscribed interrupt */
                   kbc_ih(); // call Interrupt Handler
-                  if (get_kbc_error()) continue; // if there was an error while reading, ignore
+                  if (get_kbc_error() || !get_scancode_ready()) continue; // if there was an error while reading, ignore
                   current_scancode = get_scancode();
-                  if (current_scancode == TWO_BYTE_PREFIX) {
-                    // First byte of a two byte scancode
-                    bytes[0] = current_scancode;
-                    size = 2;
-                  } else {
-                    if (size == 2) {
-                      // Second byte of a two byte scancode
-                      bytes[1] = current_scancode;
-                    } else {
-                      // It's a one byte scancode
-                      bytes[0] = current_scancode;
-                    }
-                    /* Check MSB to determine if it's a Makecode or a Breakcode. If bit 7 is 0, it's a makecode. Else it's a breakcode. */
-                    make = !(current_scancode & BIT(7));
-                    kbd_print_scancode(make, size, bytes);
-                    size = 1; // reset the size for the next scancode
-                  }
+                  process_scancode(current_scancode, bytes, &size);
                 }
                 break;
             default:
@@ -100,10 +103,35 @@ int(kbd_test_scan)() {
 }
 
 int(kbd_test_poll)() {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
-
-  return 1;
+  uint8_t cmd_byte;
+  uint8_t current_scancode = 0;
+  uint8_t bytes[2];
+  uint8_t size = 1;
+  while (current_scancode != ESC_BREAK) {
+    // Read the status directly
+    uint8_t status;
+    if (util_sys_inb(KBC_STATUS_REG, &status) != 0) continue;
+    // If there's data, let's get it and validate errors
+    if (status & KBC_OBF) {
+      if (util_sys_inb(KBC_OUT_BUF, &current_scancode) != 0) continue;
+      if ((status & KBC_PARITY_ERR) || (status & KBC_TIMEOUT_ERR)) continue;
+      process_scancode(current_scancode, bytes, &size);
+    } else {
+      // If there's no data, do a pause
+      tickdelay(micros_to_ticks(DELAY_US));
+    }
+  }
+  /* Restore the KBC */
+  // Read the Comand Byte status
+  if (kbc_write_cmd(KBC_STATUS_REG, KBC_READ_CMD) != 0) return 1;
+  if (kbc_read_out_buf(&cmd_byte) != 0) return 1;
+  // Activate keyboard interrupts (setting Bit 0 to 1)
+  cmd_byte = cmd_byte | KBC_INT_KBD;
+  // Write the corrected configuration
+  if (kbc_write_cmd(KBC_STATUS_REG, KBC_WRITE_CMD) != 0) return 1;
+  if (kbc_write_cmd(KBC_OUT_BUF, cmd_byte) != 0) return 1;
+  kbd_print_no_sysinb(get_sys_inb_cnt());
+  return 0;
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {
