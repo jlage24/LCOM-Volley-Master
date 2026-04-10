@@ -7,6 +7,8 @@
 #include "kbc.h"
 
 uint32_t get_sys_inb_cnt();
+uint32_t get_timer_ticks();
+void reset_timer_ticks();
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -97,8 +99,7 @@ int(kbd_test_scan)() {
     printf("Error while canceling keyboard's subscription\n");
     return 1;
   }
-  uint32_t cnt = get_sys_inb_cnt();
-  kbd_print_no_sysinb(cnt);
+  kbd_print_no_sysinb(get_sys_inb_cnt());
   return 0;
 }
 
@@ -135,9 +136,66 @@ int(kbd_test_poll)() {
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
-
-  return 1;
+  int ipc_status, r;
+  message msg;
+  /* Keyboard variables */
+  uint8_t kbd_bit_no = 1;
+  uint32_t irq_set_kbd = BIT(kbd_bit_no);
+  int kbc_hook_id = 1; 
+  uint8_t bytes[2];
+  uint8_t size = 1;
+  uint8_t current_scancode = 0;
+  /* Timer variables */
+  uint8_t timer_bit_no = 0;
+  // Subscribe to both Timer and Keyboard interrupts
+  if (sys_irqsetpolicy(KBC_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &kbc_hook_id) != 0) {
+    printf("Error subscribing keyboard interrupts\n");
+    return 1;
+  }
+  if (timer_subscribe_int(&timer_bit_no) != 0) {
+    printf("Error subscribing timer interrupts\n");
+    return 1;
+  }
+  uint32_t irq_set_timer = BIT(timer_bit_no); //create the timer IRQ mask after subscribing
+  reset_timer_ticks(); 
+  // The timer frequency is 60Hz. So, n seconds = n * 60 ticks.
+  uint32_t limit_ticks = n * 60;
+  while (current_scancode != ESC_BREAK && get_timer_ticks() < limit_ticks) {
+    if ((r = driver_receive(ANY, &msg, &ipc_status)) != 0) {
+      printf("driver_receive failed with: %d", r);
+      continue;
+    }
+    if (is_ipc_notify(ipc_status)) { 
+        switch (_ENDPOINT_P(msg.m_source)) {
+          case HARDWARE: 
+            /* Process Timer Interrupt */
+            if (msg.m_notify.interrupts & irq_set_timer) {
+                timer_int_handler(); // increments timer_ticks
+            }
+            /* Process Keyboard Interrupt */
+            if (msg.m_notify.interrupts & irq_set_kbd) { 
+                kbc_ih(); 
+                if (get_kbc_error() || !get_scancode_ready()) continue; 
+                current_scancode = get_scancode();
+                process_scancode(current_scancode, bytes, &size);
+                // Reset the timer when user activity is detected
+                reset_timer_ticks();
+            }
+            break;
+        default:
+            break; 
+      }
+    }
+  }
+  // Unsubscribe from all devices before leaving
+  if (sys_irqrmpolicy(&kbc_hook_id) != 0) {
+      printf("Error unsubscribing keyboard\n");
+      return 1;
+  }
+  if (timer_unsubscribe_int() != 0) {
+      printf("Error unsubscribing timer\n");
+      return 1;
+  }
+  kbd_print_no_sysinb(get_sys_inb_cnt());
+  return 0;
 }
-

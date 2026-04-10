@@ -37,6 +37,6 @@ int kbc_write_cmd(int port, uint8_t cmd);
 int kbc_read_out_buf(uint8_t *data);
 uint8_t get_scancode();
 bool get_kbc_error();
-bool get_scancode_ready(); // NEW: Garante que não lemos lixo!
+bool get_scancode_ready(); 
 
 #endif
