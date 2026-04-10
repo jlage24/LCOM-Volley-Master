@@ -6,7 +6,7 @@
 #include "i8254.h"
 
 static int hook_id_timer = 0;
-uint32_t timer_ticks = 0;
+static uint32_t timer_ticks = 0;
 
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
   if (timer > 2) return 1;
@@ -43,6 +43,14 @@ int (timer_unsubscribe_int)() {
 
 void (timer_int_handler)() {
   timer_ticks++;
+}
+
+uint32_t get_timer_ticks() {
+  return timer_ticks;
+}
+
+void reset_timer_ticks() {
+  timer_ticks = 0;
 }
 
 int (timer_get_conf)(uint8_t timer, uint8_t *st) {

@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-extern uint32_t timer_ticks; 
+uint32_t get_timer_ticks();
+void reset_timer_ticks();
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -48,7 +49,6 @@ int(timer_test_int)(uint8_t time) {
   uint32_t irq_set = BIT(bit_no);
   int ipc_status;
   message msg;
-  timer_ticks = 0; 
   while (time > 0) { 
     if (driver_receive(ANY, &msg, &ipc_status) != 0) { 
       printf("driver_receive failed\n");
@@ -59,7 +59,7 @@ int(timer_test_int)(uint8_t time) {
         case HARDWARE: 
           if (msg.m_notify.interrupts & irq_set) { 
             timer_int_handler(); 
-            if (timer_ticks % 60 == 0) { 
+            if (get_timer_ticks() % 60 == 0) { 
               timer_print_elapsed_time(); 
               time--; 
             }
