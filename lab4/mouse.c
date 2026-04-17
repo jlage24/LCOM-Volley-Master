@@ -1,6 +1,6 @@
 #include <lcom/lcf.h>
 #include "mouse.h"
-#include "../lab3/kbc.h"
+#include "kbc.h"
 
 static uint8_t current_byte;
 static bool mouse_error = false;
