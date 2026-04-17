@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "i8254.h"
+#include "timer_utils.h"
 
 static int hook_id_timer = 0;
 static uint32_t timer_ticks = 0;

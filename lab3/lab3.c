@@ -5,10 +5,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "kbc.h"
-
-uint32_t get_sys_inb_cnt();
-uint32_t get_timer_ticks();
-void reset_timer_ticks();
+#include "../lab2/timer_utils.h"
+#include "../lab2/utils.h"
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
