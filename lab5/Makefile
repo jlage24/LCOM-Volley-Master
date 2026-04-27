@@ -2,7 +2,8 @@
 PROG=lab5 
 
 # source code files to be compiled 
-SRCS = lab5.c
+.PATH.c: ../lab2
+SRCS = lab5.c utils.c
 
 # additional compilation flags
 CFLAGS += -pedantic

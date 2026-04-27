@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "video.h"
 #include "vbe.h"
+#include "../lab3/kbc.h"
 
 // Any header files included below this line should have been created by you
 
@@ -55,11 +56,54 @@ int(video_test_init)(uint16_t mode, uint8_t delay) {
 
 int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
                           uint16_t width, uint16_t height, uint32_t color) {
-    /* To be completed */
-    printf("%s(0x%03X, %u, %u, %u, %u, 0x%08x): under construction\n",
-            __func__, mode, x, y, width, height, color);
+    // Map Video Memory
+    if (vbe_map_vram(mode) != 0) {
+        printf("Failed to map VRAM\n");
+        return 1;
+    }
 
-    return 1;
+    // Set Video Mode
+    if (vbe_set_mode(mode) != 0) {
+        printf("Failed to set video mode\n");
+        return 1;
+    }
+
+    // Draw the rectangle
+    vg_draw_rectangle(x, y, width, height, color);
+
+    // Wait for ESC key (0x81) using Keyboard Interrupts
+    int kbc_hook_id = KBC_IRQ; 
+    uint32_t irq_set = BIT(kbc_hook_id);
+    
+    // Subscribe Keyboard Interrupts
+    if (sys_irqsetpolicy(KBC_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &kbc_hook_id) != 0) return 1;
+
+    int ipc_status, r;
+    message msg;
+    bool esc_pressed = false;
+
+    while (!esc_pressed) {
+        if ((r = driver_receive(ANY, &msg, &ipc_status)) != 0) continue;
+        if (is_ipc_notify(ipc_status)) {
+            switch (_ENDPOINT_P(msg.m_source)) {
+                case HARDWARE:
+                    if (msg.m_notify.interrupts & irq_set) {
+                        kbc_ih(); 
+                        if (get_kbc_error()) continue; 
+                        if (get_scancode_ready() && get_scancode() == ESC_BREAK) { 
+                            esc_pressed = true;
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    // Clean up and Exit
+    if (sys_irqrmpolicy(&kbc_hook_id) != 0) return 1; // unsubscribe
+    if (vg_exit() != 0) return 1; // return to text mode
+
+    return 0;
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
