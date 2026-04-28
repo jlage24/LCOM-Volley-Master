@@ -107,9 +107,72 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-    /* To be completed */
-    printf("%s(%8p, %u, %u): under construction\n", __func__, xpm, x, y);
+    uint16_t mode = 0x105;
 
-    return 1;
+    // Map Video Memory 
+    if (vbe_map_vram(mode) != 0) {
+        printf("Failed to map VRAM\n");
+        return 1;
+    }
+
+    // Set Video Mode (0x105 for indexed colors)
+    if (vbe_set_mode(mode) != 0) {
+        printf("Failed to set video mode\n");
+        return 1;
+    }
+
+    // Load the XPM into a Pixmap
+    xpm_image_t img;
+    // We use XPM_INDEXED because mode 0x105 uses 1 byte per color
+    uint8_t *map = xpm_load(xpm, XPM_INDEXED, &img);
+    if (map == NULL) {
+        vg_exit();
+        printf("Failed to load XPM\n");
+        return 1;
+    }
+
+    // Draw the Pixmap pixel by pixel
+    for (int i = 0; i < img.height; i++) {
+        for (int j = 0; j < img.width; j++) {
+            // Read the color from the 1D map array
+            uint32_t color = map[i * img.width + j];
+            // Draw it on the screen at the correct coordinates
+            vg_draw_pixel(x + j, y + i, color);
+        }
+    }
+
+    // Wait for ESC key (0x81) using Keyboard Interrupts
+    int kbc_hook_id = KBC_IRQ; 
+    uint32_t irq_set = BIT(kbc_hook_id);
+    
+    if (sys_irqsetpolicy(KBC_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &kbc_hook_id) != 0) return 1;
+
+    int ipc_status, r;
+    message msg;
+    bool esc_pressed = false;
+
+    while (!esc_pressed) {
+        if ((r = driver_receive(ANY, &msg, &ipc_status)) != 0) continue;
+        if (is_ipc_notify(ipc_status)) {
+            switch (_ENDPOINT_P(msg.m_source)) {
+                case HARDWARE:
+                    if (msg.m_notify.interrupts & irq_set) {
+                        kbc_ih(); 
+                        if (get_kbc_error()) continue; 
+                        
+                        if (get_scancode_ready() && get_scancode() == ESC_BREAK) { 
+                            esc_pressed = true;
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    // Clean up and Exit
+    if (sys_irqrmpolicy(&kbc_hook_id) != 0) return 1; 
+    if (vg_exit() != 0) return 1;                     
+
+    return 0;
 }
 
