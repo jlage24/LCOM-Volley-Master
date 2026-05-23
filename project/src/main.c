@@ -25,7 +25,8 @@
 #include "game/game.h"
 #include "game/ball.h"
 /* #include "game/player.h"  ← descomentar quando o João entregar */
-/* #include "video/video.h"  ← descomentar quando a Mafalda entregar */
+#include "video/video.h"  
+#include "ui/game_render.h"
 
 /* Variáveis globais do módulo Timer*/
 
@@ -160,16 +161,15 @@ static int game_update(void) {
 
     /*
      * ── Render  (Mafalda) ───────────────────────────────
-     *
-     * TODO: descomentar quando video.h estiver disponível.
-     *
-     * video_draw_background();
-     * video_draw_net();
-     * video_draw_ball(&g_ball);
-     * video_draw_players(&g_player1, &g_player2);
-     * video_draw_score(score_p1, score_p2);
-     * video_flip_buffer();
      */
+    
+    video_draw_background();
+    video_draw_net();
+    video_draw_ball(&g_ball);
+
+    // video_draw_players(&g_player1, &g_player2);
+
+    video_flush();
 
     return 0;
 }
@@ -190,10 +190,13 @@ int proj_main_loop(int argc, char *argv[]) {
     ball_init(&g_ball, 0);
 
     /*
-     * TO DO (Mafalda): inicializar o modo de vídeo aqui.
-     *   if (video_init(VIDEO_MODE) != 0) { timer_cleanup(); return 1; }
-     *
-     * TO DO (João/David): subscrever teclado e rato aqui.
+     * TO DO (Mafalda): inicializar o modo de vídeo aqui. */
+
+    if (vbe_map_vram(VIDEO_MODE) != 0) return 1; 
+    if (vbe_set_mode(VIDEO_MODE) != 0) return 1;
+    if (video_init_back_buffer() != 0) return 1;
+
+    /* TO DO (João/David): subscrever teclado e rato aqui.
      *   kbd_subscribe_int(&kbd_irq_set);
      *   mouse_subscribe_int(&mouse_irq_set);
      */
@@ -251,10 +254,9 @@ int proj_main_loop(int argc, char *argv[]) {
 
     /* ── Limpeza ──────────────────────────────────────── */
     timer_cleanup();
-
-    /*
-     * TODO: video_cleanup(), kbd_unsubscribe_int(), mouse_unsubscribe_int()
-     */
+    
+    video_free_back_buffer(); 
+    vg_exit();
 
     printf("[EXIT] Ticks totais: %u  (~%.1f segundos)\n",
            tick_count, (float)tick_count / 60.0f);

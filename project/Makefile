@@ -3,6 +3,7 @@ PROG = proj
 SRCS = src/main.c src/game/game.c src/game/ball.c \
        src/game/player.c src/game/score.c \
        src/ui/menu.c src/ui/hud.c \
+       src/ui/game_render.c \
        src/input/keyboard.c
 
 CFLAGS += -pedantic -I../lab2 -I../lab3 -I../lab4 -I../lab5 -I./src
