@@ -48,25 +48,4 @@ int (vg_draw_hline)(uint16_t x, uint16_t y, uint16_t len, uint32_t color);
  */
 int (vg_draw_rectangle)(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color);
 
-/**
- * @brief Aloca a memória necessária para o back buffer
- * @return 0 em caso de sucesso, não-zero caso contrário
- */
-int video_init_back_buffer();
-
-/**
- * @brief Copia o conteúdo do back buffer para a memória de vídeo (VRAM)
- */
-void video_flush();
-
-/**
- * @brief Desenha um píxel no back buffer
- */
-int vg_draw_pixel_bb(uint16_t x, uint16_t y, uint32_t color);
-
-/**
- * @brief Liberta a memória do back buffer
- */
-void video_free_back_buffer();
-
 #endif /* _LCOM_VIDEO_H_ */

@@ -19,13 +19,15 @@
  */
 
 #include <lcom/lcf.h>      /* driver_receive, message, etc.  */
-#include <lcom/timer.h>    /* timer_subscribe_int, timer_set_frequency */
+#include <lcom/timer.h>
 
-/* Cabeçalhos do projeto */
+/* Cabeçalhos do projeto 
 #include "game/game.h"
-#include "game/ball.h"
+#include "game/ball.h" 
+*/
 /* #include "game/player.h"  ← descomentar quando o João entregar */
-/* #include "video/video.h"  ← descomentar quando a Mafalda entregar */
+#include "../lab5/video.h"
+#include "ui/game_render.h"
 
 /* Variáveis globais do módulo Timer*/
 
@@ -108,21 +110,21 @@ static void timer_cleanup(void) {
  * @return 0 → continua o jogo
  *         1 → alguém ganhou, sair do loop
  */
-static int game_update(void) {
+int game_update(void) {
     /* ── Física da bola ───────────────────────────────── */
-    int point = ball_update(&g_ball);
+    int point = 0;
 
     /* ── Ponto marcado? ───────────────────────────────── */
     if (point == 1) {
         score_p1++;
         printf("[SCORE] Jogador 1: %d  |  Jogador 2: %d\n",
                score_p1, score_p2);
-        ball_init(&g_ball, 1);   /* serve para a direita */
+        //ball_init(&g_ball, 1);   /* serve para a direita */
     } else if (point == -1) {
         score_p2++;
         printf("[SCORE] Jogador 1: %d  |  Jogador 2: %d\n",
                score_p1, score_p2);
-        ball_init(&g_ball, 0);   /* serve para a esquerda */
+        //ball_init(&g_ball, 0);   /* serve para a esquerda */
     }
 
     /* ── Verificação de vitória ───────────────────────── */
@@ -160,16 +162,15 @@ static int game_update(void) {
 
     /*
      * ── Render  (Mafalda) ───────────────────────────────
-     *
-     * TODO: descomentar quando video.h estiver disponível.
-     *
-     * video_draw_background();
-     * video_draw_net();
-     * video_draw_ball(&g_ball);
-     * video_draw_players(&g_player1, &g_player2);
-     * video_draw_score(score_p1, score_p2);
-     * video_flip_buffer();
      */
+    
+    video_draw_background();
+    video_draw_net();
+    video_draw_ball(&g_ball);
+
+    // video_draw_players(&g_player1, &g_player2);
+
+    video_flush();
 
     return 0;
 }
@@ -177,7 +178,7 @@ static int game_update(void) {
 /* ═══════════════════════════════════════════════════════
  * proj_main_loop  (chamada pelo LCF após inicialização)
  * ═══════════════════════════════════════════════════════ */
-int proj_main_loop(int argc, char *argv[]) {
+int (proj_main_loop)(int argc, char *argv[]) {
     (void)argc; (void)argv;   /* evita warnings de unused */
 
     /* ── Inicialização ────────────────────────────────── */
@@ -187,13 +188,19 @@ int proj_main_loop(int argc, char *argv[]) {
         return 1;
 
     /* Estado inicial da bola (serve para a esquerda no arranque) */
-    ball_init(&g_ball, 0);
+    //ball_init(&g_ball, 0);
+    g_ball.x = 512.0f; 
+    g_ball.y = 200.0f; 
+   
 
     /*
-     * TO DO (Mafalda): inicializar o modo de vídeo aqui.
-     *   if (video_init(VIDEO_MODE) != 0) { timer_cleanup(); return 1; }
-     *
-     * TO DO (João/David): subscrever teclado e rato aqui.
+     * TO DO (Mafalda): inicializar o modo de vídeo aqui. */
+
+    if (vbe_map_vram(VIDEO_MODE) != 0) return 1; 
+    if (vbe_set_mode(VIDEO_MODE) != 0) return 1;
+    if (video_init_back_buffer() != 0) return 1;
+
+    /* TO DO (João/David): subscrever teclado e rato aqui.
      *   kbd_subscribe_int(&kbd_irq_set);
      *   mouse_subscribe_int(&mouse_irq_set);
      */
@@ -219,7 +226,7 @@ int proj_main_loop(int argc, char *argv[]) {
 
                 case HARDWARE:
                     /* ── Interrupção do Timer (60 Hz) ─── */
-                    if (msg.m_notify.interrupts & timer_irq_set) {
+                    if (msg.m_notify.interrupts & BIT(timer_irq_set)) {
                         tick_count++;
                         timer_int_handler();   /* limpa o contador interno da libtimer */
 
@@ -251,12 +258,18 @@ int proj_main_loop(int argc, char *argv[]) {
 
     /* ── Limpeza ──────────────────────────────────────── */
     timer_cleanup();
-
-    /*
-     * TODO: video_cleanup(), kbd_unsubscribe_int(), mouse_unsubscribe_int()
-     */
+    
+    video_free_back_buffer(); 
+    vg_exit();
 
     printf("[EXIT] Ticks totais: %u  (~%.1f segundos)\n",
            tick_count, (float)tick_count / 60.0f);
     return 0;
 }
+
+int main(int argc, char *argv[]) {
+    lcf_start(argc, argv);
+    lcf_cleanup();
+    return 0;
+}
+

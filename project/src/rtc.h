@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include ".minix-src/include/lcom/lcf.h"
+#include <lcom/lcf.h>
 
 typedef struct {
   uint8_t day;
@@ -18,3 +18,4 @@ typedef struct {
  * configuration and perform data conversions if necessary (e.g. BCD to binary).
  */
 int rtc_read_date(rtc_date *date);
+

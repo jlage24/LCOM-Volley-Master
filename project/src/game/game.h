@@ -23,8 +23,9 @@ typedef struct {
 } Player;
 
 void game_init(void);
-void game_update(void);
+int game_update(void);
 void game_render(void);
 bool game_should_exit(void);
 
 #endif
+

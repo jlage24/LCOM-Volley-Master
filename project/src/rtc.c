@@ -43,3 +43,4 @@ int rtc_read_date(rtc_date *date) {
   date->year  = (uint8_t) year;
   return 0; 
 }
+
