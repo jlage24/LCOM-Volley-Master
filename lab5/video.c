@@ -1,15 +1,12 @@
 #include <lcom/lcf.h>
 #include "video.h"
 #include "vbe.h"
-#include <stdlib.h>
 
-static char *video_mem;          // Virtual address to which VRAM is mapped
+char *video_mem;          // Virtual address to which VRAM is mapped
 static vbe_mode_info_t vmi;      // VBE mode info
 static unsigned bytes_per_pixel; // Number of VRAM bytes per pixel
 static unsigned h_res;           // Horizontal resolution
 static unsigned v_res;           // Vertical resolution
-static char *back_buffer;        // Pointer to the back buffer
-
 
 int vbe_set_mode(uint16_t mode) {
     reg86_t reg;
@@ -95,7 +92,7 @@ int (vg_draw_pixel)(uint16_t x, uint16_t y, uint32_t color) {
 
 int (vg_draw_hline)(uint16_t x, uint16_t y, uint16_t len, uint32_t color) {
     for (uint16_t i = 0; i < len; i++) {
-        vg_draw_pixel_bb(x + i, y, color);
+        vg_draw_pixel(x + i, y, color);
     }
     return 0;
 }
@@ -105,38 +102,4 @@ int (vg_draw_rectangle)(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
         vg_draw_hline(x, y + i, width, color);
     }
     return 0;
-}
-
-int video_init_back_buffer() {
-    // Tamanho total = resolução horizontal * resolução vertical * bytes por píxel
-    unsigned int vram_size = h_res * v_res * bytes_per_pixel;
-    
-    back_buffer = (char*) malloc(vram_size);
-    
-    if (back_buffer == NULL) {
-        printf("Failed to allocate memory for back buffer\n");
-        return 1;
-    }
-    return 0;
-}
-
-void video_flush() {
-    unsigned int vram_size = h_res * v_res * bytes_per_pixel;
-    memcpy(video_mem, back_buffer, vram_size);
-}
-
-int vg_draw_pixel_bb(uint16_t x, uint16_t y, uint32_t color) {
-    if (x >= h_res || y >= v_res) return 0; // Prevenção de limites
-
-    unsigned int offset = (y * h_res + x) * bytes_per_pixel;
-    memcpy(&back_buffer[offset], &color, bytes_per_pixel);
-    
-    return 0;
-}
-
-void video_free_back_buffer() {
-    if (back_buffer != NULL) {
-        free(back_buffer);
-        back_buffer = NULL;
-    }
 }
