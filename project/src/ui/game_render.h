@@ -1,11 +1,15 @@
 #ifndef _GAME_RENDER_H_
 #define _GAME_RENDER_H_
 
+#include <stdint.h>
 #include "../game/game.h" 
 
 int video_init_back_buffer();
 void video_free_back_buffer();
 void video_flush();
+
+int vg_draw_pixel_bb(uint16_t x, uint16_t y, uint32_t color);
+void draw_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color);
 
 void video_draw_background();
 void video_draw_net();
