@@ -20,6 +20,8 @@
 
 #include <lcom/lcf.h>      /* driver_receive, message, etc.  */
 #include <lcom/timer.h>
+#include "../lab3/kbc.h"
+#include "../lab5/video.h"
 
 /* Cabeçalhos do projeto 
 #include "game/game.h"
@@ -28,12 +30,11 @@
 /* #include "game/player.h"  ← descomentar quando o João entregar */
 
 #include "src/input/keyboard.h"
-#include "../lab3/kbc.h"
-#include "../lab5/video.h"
 #include "ui/game_render.h"
 #include "ui/menu.h"
+#include "ui/assets.h"
 
-GameState current_state = STATE_MENU;
+GameState current_state = STATE_PLAYING;
 
 /* Variáveis globais do módulo Timer*/
 
@@ -245,9 +246,14 @@ int (proj_main_loop)(int argc, char *argv[]) {
     /*
      * TO DO (Mafalda): inicializar o modo de vídeo aqui. */
 
-    if (vbe_map_vram(VIDEO_MODE) != 0) return 1; 
-    if (vbe_set_mode(VIDEO_MODE) != 0) return 1;
+    if (vbe_map_vram(0x118) != 0) return 1;    // FORÇAR 0x118 AQUI
+    if (vbe_set_mode(0x118) != 0) return 1;
     if (video_init_back_buffer() != 0) return 1;
+
+    if (load_all_assets() != 0) {
+        vg_exit(); 
+        return 1;
+    }
 
     /* TO DO (João/David): subscrever teclado e rato aqui. 
      mouse_subscribe_int(&mouse_irq_set);
@@ -282,6 +288,8 @@ int (proj_main_loop)(int argc, char *argv[]) {
 
                         if (game_update() != 0)
                             running = 0;       /* alguém ganhou → sair   */
+                            
+                        keyboard_clear_events();
                     }
 
                     if (msg.m_notify.interrupts & BIT(kbd_irq_set)) {
