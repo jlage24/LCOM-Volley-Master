@@ -16,7 +16,7 @@ extern MouseState mouse_state;
 
 int mouse_subscribe_int (uint8_t *bit_no);
 
-int mouse_unsubscrive_int (void);
+int mouse_unsubscribe_int (void);
 
 void mouse_handle_bytes (uint8_t byte);
 
