@@ -85,7 +85,13 @@ static uint8_t mouse_buf[3];
 static uint8_t mouse_idx = 0;
 
 void mouse_handle_bytes(uint8_t byte) {
-    if ( mouse_idx == 0 && !(byte & MOUSE_SYNC_BIT)) {
+
+    if (get_mouse_error()){
+        mouse_idx = 0;
+        return;
+    }
+
+    if (mouse_idx == 0 && !(byte & MOUSE_SYNC_BIT)) {
         return;
     }
 
