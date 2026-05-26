@@ -1,8 +1,8 @@
 PROG = proj
 
-VPATH = src:src/game:src/input:src/ui:../lab2
+VPATH = src:src/game:src/devices:src/ui:../lab2
 
-SRCS = proj.c player.c keyboard.c game_render.c timer.c
+SRCS = proj.c player.c keyboard.c mouse.c game_render.c timer.c
 
 CFLAGS += -pedantic -I../lab2 -I../lab3 -I../lab4 -I../lab5 -I./src
 DPADD += ${LIBLCF} ../lab2/libtimer.a ../lab3/libkbc.a \
