@@ -1,26 +1,37 @@
 #include "assets.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-uint8_t *bg_pixmap = NULL;
+#include "../images/menu.xpm"
+#include "../images/menu_pause.xpm"
+#include "../images/btn_start.xpm"
+#include "../images/btn_exit.xpm"
+#include "../images/btn_resume.xpm"
+#include "../images/btn_menu.xpm"
+
+xpm_image_t bg_pixmap;
+xpm_image_t menu_pixmap;
+xpm_image_t menu_pause_pixmap;
+xpm_image_t beach_volley_pixmap;
+xpm_image_t desert_volley_pixmap;
+xpm_image_t jungle_volley_pixmap;
+xpm_image_t ice_volley_pixmap;
+
+xpm_image_t btn_start_pixmap;
+xpm_image_t btn_exit_pixmap;
+xpm_image_t btn_resume_pixmap;
+xpm_image_t btn_menu_pixmap;
 
 int load_all_assets() {
-    // 1. Alocar a memória EXATA: 1024 * 768 píxeis * 3 bytes (24-bits)
-    bg_pixmap = malloc(1024 * 768 * 3);
-    if (bg_pixmap == NULL) return 1;
+    
+    xpm_load((xpm_map_t) menu, XPM_8_8_8_8, &menu_pixmap);
+    xpm_load((xpm_map_t) menu_pause, XPM_8_8_8_8, &menu_pause_pixmap);
+    
+    xpm_load((xpm_map_t) btn_start, XPM_8_8_8_8, &btn_start_pixmap);
+    xpm_load((xpm_map_t) btn_exit, XPM_8_8_8_8, &btn_exit_pixmap);
+    
+    xpm_load((xpm_map_t) btn_resume, XPM_8_8_8_8, &btn_resume_pixmap);
+    xpm_load((xpm_map_t) btn_menu, XPM_8_8_8_8, &btn_menu_pixmap);
 
-    FILE *f = fopen("/home/lcom/labs/project/src/images/fundo.bmp", "rb");
-    if (f == NULL) return 1;
-
-    fseek(f, 54, SEEK_SET); // Saltar cabeçalho
-    uint8_t row[1024 * 3];
-
-    for (int y = 0; y < 768; y++) {
-        fread(row, 1, 1024 * 3, f);
-        memcpy(&bg_pixmap[y * 1024 * 3], row, 1024 * 3);
-    }
-    fclose(f);
     return 0;
 }
+
 

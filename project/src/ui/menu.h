@@ -6,7 +6,7 @@
 
 void draw_main_menu();
 void draw_pause_menu();
-void draw_game_over_menu();
+void draw_field();
 
 #endif /* _MENU_H_ */
 

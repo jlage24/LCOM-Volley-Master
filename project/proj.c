@@ -34,7 +34,7 @@
 #include "ui/menu.h"
 #include "ui/assets.h"
 
-GameState current_state = STATE_PLAYING;
+GameState current_state = STATE_MENU;
 
 /* Variáveis globais do módulo Timer*/
 
@@ -202,20 +202,17 @@ int game_update(void) {
         draw_main_menu();
     }
     else if (current_state == STATE_PLAYING) {
-        video_draw_background();
+        draw_field();
         video_draw_net();
         video_draw_ball(&g_ball);
     }
     else if (current_state == STATE_PAUSED) {
-        video_draw_background();
+        draw_field();
         video_draw_net();
         video_draw_ball(&g_ball);
-        // Desenha o menu de pausa por cima
         draw_pause_menu();
     }
-    else if (current_state == STATE_END) {
-        draw_game_over_menu();
-    }
+    
     
 
     // video_draw_players(&g_player1, &g_player2);
@@ -246,7 +243,7 @@ int (proj_main_loop)(int argc, char *argv[]) {
     /*
      * TO DO (Mafalda): inicializar o modo de vídeo aqui. */
 
-    if (vbe_map_vram(0x118) != 0) return 1;    // FORÇAR 0x118 AQUI
+    if (vbe_map_vram(0x118) != 0) return 1;   
     if (vbe_set_mode(0x118) != 0) return 1;
     if (video_init_back_buffer() != 0) return 1;
 
