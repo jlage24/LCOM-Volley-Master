@@ -38,5 +38,7 @@ int kbc_read_out_buf(uint8_t *data);
 uint8_t get_scancode();
 bool get_kbc_error();
 bool get_scancode_ready(); 
+int kbd_subscribe_int(uint8_t *bit_no);
+int kbd_unsubscribe_int();
 
 #endif

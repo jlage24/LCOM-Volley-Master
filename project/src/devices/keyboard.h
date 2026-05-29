@@ -10,6 +10,7 @@
 #define SCANCODE_D      0x20
 #define SCANCODE_W      0x11
 #define SCANCODE_ESC    0x01
+#define SCANCODE_ENTER  0x1C
 
 /* Keyboard state exposed to game_update() */
 typedef struct {
@@ -17,6 +18,7 @@ typedef struct {
     bool move_right;
     bool jump;
     bool pause;
+    bool enter;
 } KeyboardState;
 
 /* Called from main.c on every keyboard interrupt */

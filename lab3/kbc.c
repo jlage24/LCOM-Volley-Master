@@ -4,6 +4,7 @@
 static uint8_t scancode = 0; 
 static bool kbc_error = false;
 static bool scancode_ready = false; // checks if the scancode is fresh
+static int hook_id_kbd = 1;
 
 void (kbc_ih)() {
     uint8_t status;
@@ -64,6 +65,22 @@ int kbc_read_out_buf(uint8_t *data) {
         tickdelay(micros_to_ticks(DELAY_US));
     }
     return 1; // Timeout
+}
+
+int kbd_subscribe_int(uint8_t *bit_no) {
+    if (bit_no == NULL) return 1;
+    *bit_no = KBC_IRQ; 
+    if (sys_irqsetpolicy(KBC_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &hook_id_kbd) != 0) {
+        return 1;
+    }
+    return 0;
+}
+
+int kbd_unsubscribe_int() {
+    if (sys_irqrmpolicy(&hook_id_kbd) != 0) {
+        return 1;
+    }
+    return 0;
 }
 
 uint8_t get_scancode() {

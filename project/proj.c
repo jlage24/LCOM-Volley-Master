@@ -20,19 +20,27 @@
 
 #include <lcom/lcf.h>      /* driver_receive, message, etc.  */
 #include <lcom/timer.h>
+#include "../lab3/kbc.h"
+#include "../lab5/video.h"
 
 /* Cabeçalhos do projeto 
 #include "game/game.h"
 #include "game/ball.h" 
 */
 /* #include "game/player.h"  ← descomentar quando o João entregar */
-#include "../lab5/video.h"
+
+#include "src/input/keyboard.h"
 #include "ui/game_render.h"
+#include "ui/menu.h"
+#include "ui/assets.h"
+
+GameState current_state = STATE_MENU;
 
 /* Variáveis globais do módulo Timer*/
 
 /* Bit de interrupção (preenchido pelo subscribe) */
 static uint8_t timer_irq_set = 0;
+static uint8_t kbd_irq_set = 0;
 
 /* Contador de ticks – útil para debug e animações */
 static uint32_t tick_count = 0;
@@ -111,32 +119,59 @@ static void timer_cleanup(void) {
  *         1 → alguém ganhou, sair do loop
  */
 int game_update(void) {
-    /* ── Física da bola ───────────────────────────────── */
-    int point = 0;
 
-    /* ── Ponto marcado? ───────────────────────────────── */
-    if (point == 1) {
-        score_p1++;
-        printf("[SCORE] Jogador 1: %d  |  Jogador 2: %d\n",
-               score_p1, score_p2);
-        //ball_init(&g_ball, 1);   /* serve para a direita */
-    } else if (point == -1) {
-        score_p2++;
-        printf("[SCORE] Jogador 1: %d  |  Jogador 2: %d\n",
-               score_p1, score_p2);
-        //ball_init(&g_ball, 0);   /* serve para a esquerda */
-    }
+    const KeyboardState *kb = get_keyboard_state();
 
-    /* ── Verificação de vitória ───────────────────────── */
-    if (score_p1 >= WIN_SCORE) {
-        printf("[FIM]  Jogador 1 ganhou!\n");
-        return 1;
-    }
-    if (score_p2 >= WIN_SCORE) {
-        printf("[FIM]  Jogador 2 ganhou!\n");
-        return 1;
-    }
+    if (current_state == STATE_MENU) {
+        if (kb->enter) {
+            current_state = STATE_PLAYING; 
+        }
+        if (kb->pause) {
+            return 1; 
+        }
+    } 
+    else if (current_state == STATE_PLAYING) {
+        if (kb->pause) {
+            current_state = STATE_PAUSED;
+        }
+        /* ── Física da bola ───────────────────────────────── */
 
+        int point = 0;
+
+        /* ── Ponto marcado? ───────────────────────────────── */
+
+        if (point == 1) {
+            score_p1++;
+            printf("[SCORE] Jogador 1: %d  |  Jogador 2: %d\n",
+                score_p1, score_p2);
+            //ball_init(&g_ball, 1);   /* serve para a direita */
+        } else if (point == -1) {
+            score_p2++;
+            printf("[SCORE] Jogador 1: %d  |  Jogador 2: %d\n",
+                score_p1, score_p2);
+            //ball_init(&g_ball, 0);   /* serve para a esquerda */
+        }
+
+        /* ── Verificação de vitória ───────────────────────── */
+
+        if (score_p1 >= WIN_SCORE) {
+            printf("[FIM]  Jogador 1 ganhou!\n");
+            return 1;
+        }
+        if (score_p2 >= WIN_SCORE) {
+            printf("[FIM]  Jogador 2 ganhou!\n");
+            return 1;
+        }
+    } 
+    else if (current_state == STATE_PAUSED) {
+        if (kb->enter) {
+            current_state = STATE_PLAYING; // O ENTER tira a pausa
+        }
+        if (kb->pause) {
+            current_state = STATE_MENU; // O ESC desiste e volta ao Menu
+        }
+    }
+    
     /*
      * ── Colisões bola↔jogadores  (SEMANAS 3/4) ─────────
      *
@@ -163,10 +198,22 @@ int game_update(void) {
     /*
      * ── Render  (Mafalda) ───────────────────────────────
      */
+    if (current_state == STATE_MENU) {
+        draw_main_menu();
+    }
+    else if (current_state == STATE_PLAYING) {
+        draw_field();
+        video_draw_net();
+        video_draw_ball(&g_ball);
+    }
+    else if (current_state == STATE_PAUSED) {
+        draw_field();
+        video_draw_net();
+        video_draw_ball(&g_ball);
+        draw_pause_menu();
+    }
     
-    video_draw_background();
-    video_draw_net();
-    video_draw_ball(&g_ball);
+    
 
     // video_draw_players(&g_player1, &g_player2);
 
@@ -196,14 +243,20 @@ int (proj_main_loop)(int argc, char *argv[]) {
     /*
      * TO DO (Mafalda): inicializar o modo de vídeo aqui. */
 
-    if (vbe_map_vram(VIDEO_MODE) != 0) return 1; 
-    if (vbe_set_mode(VIDEO_MODE) != 0) return 1;
+    if (vbe_map_vram(0x118) != 0) return 1;   
+    if (vbe_set_mode(0x118) != 0) return 1;
     if (video_init_back_buffer() != 0) return 1;
 
-    /* TO DO (João/David): subscrever teclado e rato aqui.
-     *   kbd_subscribe_int(&kbd_irq_set);
-     *   mouse_subscribe_int(&mouse_irq_set);
+    if (load_all_assets() != 0) {
+        vg_exit(); 
+        return 1;
+    }
+
+    /* TO DO (João/David): subscrever teclado e rato aqui. 
+     mouse_subscribe_int(&mouse_irq_set);
      */
+
+    if (kbd_subscribe_int(&kbd_irq_set) != 0) return 1;
 
     printf("[INIT] Volley Master iniciado. Bola em (%.0f, %.0f)\n",
            g_ball.x, g_ball.y);
@@ -232,6 +285,15 @@ int (proj_main_loop)(int argc, char *argv[]) {
 
                         if (game_update() != 0)
                             running = 0;       /* alguém ganhou → sair   */
+                            
+                        keyboard_clear_events();
+                    }
+
+                    if (msg.m_notify.interrupts & BIT(kbd_irq_set)) {
+                        kbc_ih(); // Lê a tecla
+                        if (get_scancode_ready() && !get_kbc_error()) {
+                            keyboard_handle(get_scancode()); 
+                        }
                     }
 
                     /*
@@ -258,6 +320,7 @@ int (proj_main_loop)(int argc, char *argv[]) {
 
     /* ── Limpeza ──────────────────────────────────────── */
     timer_cleanup();
+    kbd_unsubscribe_int();
     
     video_free_back_buffer(); 
     vg_exit();
