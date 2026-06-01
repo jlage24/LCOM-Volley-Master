@@ -45,13 +45,9 @@ void mouse_handle_bytes(uint8_t byte) {
 
         mouse_parse_packet(mouse_buf, &pp);
 
-        if (pp.x_ov) {
-            mouse_state.dx = 0;
-        } else {
-            mouse_state.dx = pp.delta_x;
-        }
-
-        mouse_state.jump = pp.lb;
+        mouse_state.left_button = pp.lb;
+        mouse_state.right_button = pp.rb;
+        mouse_state.scroll_button = pp.mb;
         mouse_state.new_data = true;
 
         mouse_idx = 0;
