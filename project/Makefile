@@ -2,7 +2,11 @@ PROG = proj
 
 VPATH = src:src/game:src/devices:src/ui:../lab2
 
+<<<<<<< HEAD
 SRCS = proj.c player.c keyboard.c mouse.c game_render.c timer.c
+=======
+SRCS = proj.c player.c keyboard.c game_render.c timer.c menu.c assets.c assets_fields.c
+>>>>>>> origin/main
 
 CFLAGS += -pedantic -I../lab2 -I../lab3 -I../lab4 -I../lab5 -I./src
 DPADD += ${LIBLCF} ../lab2/libtimer.a ../lab3/libkbc.a \

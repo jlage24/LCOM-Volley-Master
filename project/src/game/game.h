@@ -14,6 +14,8 @@
 
 typedef enum { STATE_MENU, STATE_PLAYING, STATE_PAUSED, STATE_END } GameState;
 
+extern GameState current_state;
+
 typedef struct { float x, y, vx, vy; } Ball;
 
 typedef struct {
