@@ -4,6 +4,7 @@ VPATH = src:src/game:src/devices:src/ui:../lab2
 
 SRCS = proj.c \
        game.c \
+       ball.c \
        player.c \
        keyboard.c \
        mouse.c \

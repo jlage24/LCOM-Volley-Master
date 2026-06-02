@@ -1,5 +1,6 @@
 #include "game.h"
 #include "player.h"
+#include "ball.h"
 
 #include "../devices/keyboard.h"
 #include "../devices/mouse.h"
@@ -55,10 +56,7 @@ void game_init(void) {
     mouse_button_was_down = false;
     should_exit = false;
 
-    g_ball.x = 512.0f;
-    g_ball.y = 200.0f;
-    g_ball.vx = 0.0f;
-    g_ball.vy = 0.0f;
+    ball_init(&g_ball, 1);
 
     player_init(&g_player1, 220.0f);
     player_init(&g_player2, 800.0f);
@@ -104,17 +102,31 @@ int game_update(void) {
         player1_update(&g_player1);
         player2_update(&g_player2);
 
-        /* TODO: move ball physics into its own module. */
-        g_ball.vy += GRAVITY;
-        g_ball.x += g_ball.vx;
-        g_ball.y += g_ball.vy;
+        int point = ball_update(&g_ball);
 
-        if (g_ball.y > FLOOR_Y - 16) {
-            g_ball.y = FLOOR_Y - 16;
-            g_ball.vy = -8.0f;
+        ball_collide_with_player(
+            &g_ball,
+            &g_player1,
+            +1
+        );
+
+        ball_collide_with_player(
+            &g_ball,
+            &g_player2,
+            -1
+        );
+
+        if (point != 0) {
+            if (point == 1) {
+                score_p1++;
+                ball_init(&g_ball, -1);
+            } else if (point == -1) {
+                score_p2++;
+                ball_init(&g_ball, 1);
+            }
+            player_init(&g_player1, 220.0f);
+            player_init(&g_player2, 800.0f);
         }
-
-        /* TODO: replace this with left/right floor detection. */
         if (score_p1 >= WIN_SCORE || score_p2 >= WIN_SCORE) {
             current_state = STATE_END;
         }
