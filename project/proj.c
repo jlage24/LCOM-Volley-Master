@@ -2,6 +2,7 @@
 #include <lcom/timer.h>
 
 #include "../lab3/kbc.h"
+#include "../lab4/mouse.h"
 #include "../lab5/video.h"
 
 #include "game/game.h"
@@ -95,6 +96,7 @@ int (proj_main_loop)(int argc, char *argv[]) {
                         }
 
                         keyboard_clear_events();
+                        mouse_clear_state();
                     }
 
                     if (msg.m_notify.interrupts & BIT(kbd_irq_set)) {
@@ -102,6 +104,14 @@ int (proj_main_loop)(int argc, char *argv[]) {
 
                         if (get_scancode_ready() && !get_kbc_error()) {
                             keyboard_handle(get_scancode());
+                        }
+                    }
+
+                    if (msg.m_notify.interrupts & BIT(mouse_irq_set)) {
+                        mouse_ih();
+
+                        if (!get_mouse_error()) {
+                            mouse_handle_bytes(get_mouse_byte());
                         }
                     }
                     break;

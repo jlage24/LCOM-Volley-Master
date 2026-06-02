@@ -10,6 +10,7 @@
 #define PLAYER_HEIGHT   64
 
 void player1_update(Player *p);
+void player2_update(Player *p);
 void player_init(Player *p, float start_x);
 
 #endif

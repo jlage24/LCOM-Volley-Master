@@ -1,4 +1,5 @@
 #include "game.h"
+#include "player.h"
 
 #include "../devices/keyboard.h"
 #include "../ui/game_render.h"
@@ -9,6 +10,8 @@ GameState current_state = STATE_MENU;
 
 /* Internal game objects */
 static Ball g_ball;
+static Player g_player1;
+static Player g_player2;
 static int score_p1 = 0;
 static int score_p2 = 0;
 static bool should_exit = false;
@@ -24,6 +27,9 @@ void game_init(void) {
     g_ball.y = 200.0f;
     g_ball.vx = 0.0f;
     g_ball.vy = 0.0f;
+
+    player_init(&g_player1, 220.0f);
+    player_init(&g_player2, 800.0f);
 }
 
 int game_update(void) {
@@ -45,6 +51,9 @@ int game_update(void) {
             current_state = STATE_PAUSED;
             return 0;
         }
+
+        player1_update(&g_player1);
+        player2_update(&g_player2);
 
         /* TODO: move ball physics into its own module. */
         g_ball.vy += GRAVITY;
@@ -95,12 +104,14 @@ void game_render(void) {
         draw_field();
         video_draw_net();
         video_draw_ball(&g_ball);
+        video_draw_players(&g_player1, &g_player2);
     }
 
     else if (current_state == STATE_PAUSED) {
         draw_field();
         video_draw_net();
         video_draw_ball(&g_ball);
+        video_draw_players(&g_player1, &g_player2);
         draw_pause_menu();
     }
 
