@@ -202,7 +202,7 @@ void game_render(void) {
         video_draw_net();
         video_draw_ball(&g_ball);
         video_draw_players(&g_player1, &g_player2);
-        video_draw_score(score_p1, score_p2);
+        
     }
 
     else if (current_state == STATE_PAUSED) {
@@ -211,7 +211,7 @@ void game_render(void) {
         video_draw_net();
         video_draw_ball(&g_ball);
         video_draw_players(&g_player1, &g_player2);
-        video_draw_score(score_p1, score_p2);
+
         draw_pause_menu();
         video_draw_cursor(cursor_x, cursor_y);
     }
