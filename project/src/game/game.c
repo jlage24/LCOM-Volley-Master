@@ -22,6 +22,8 @@ static Player g_player1;
 static Player g_player2;
 static int score_p1 = 0;
 static int score_p2 = 0;
+static int game_seconds_left = GAME_TIME_SECONDS;
+static int timer_frame_count = 0;
 static int cursor_x = H_RES / 2;
 static int cursor_y = V_RES / 2;
 static bool mouse_button_was_down = false;
@@ -51,6 +53,8 @@ void game_init(void) {
 
     score_p1 = 0;
     score_p2 = 0;
+    game_seconds_left = GAME_TIME_SECONDS;
+    timer_frame_count = 0;
     cursor_x = H_RES / 2;
     cursor_y = V_RES / 2;
     mouse_button_was_down = false;
@@ -96,6 +100,23 @@ int game_update(void) {
     else if (current_state == STATE_PLAYING) {
         if (kb->pause) {
             current_state = STATE_PAUSED;
+            return finish_update(0);
+        }
+
+        if (game_seconds_left == 0) {
+            current_state = STATE_END;
+            return finish_update(0);
+        }
+
+        if (game_seconds_left > 0) {
+            timer_frame_count++;
+            if (timer_frame_count >= 60) {
+                timer_frame_count = 0;
+                game_seconds_left--;
+            }
+        }
+
+        if (game_seconds_left == 0) {
             return finish_update(0);
         }
 
@@ -177,6 +198,7 @@ void game_render(void) {
 
     else if (current_state == STATE_PLAYING) {
         draw_field();
+        video_draw_hud(score_p1, score_p2, game_seconds_left);
         video_draw_net();
         video_draw_ball(&g_ball);
         video_draw_players(&g_player1, &g_player2);
@@ -184,6 +206,7 @@ void game_render(void) {
 
     else if (current_state == STATE_PAUSED) {
         draw_field();
+        video_draw_hud(score_p1, score_p2, game_seconds_left);
         video_draw_net();
         video_draw_ball(&g_ball);
         video_draw_players(&g_player1, &g_player2);

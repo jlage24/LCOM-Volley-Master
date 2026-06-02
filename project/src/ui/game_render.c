@@ -2,6 +2,7 @@
 #include "assets.h"
 #include "../game/player.h"
 #include "../../../lab5/video.h" 
+#include <stdio.h>
 #include <stdlib.h> 
 #include <string.h>
 
@@ -79,11 +80,84 @@ void video_draw_players(Player *p1, Player *p2) {
     
     uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
     uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
-    draw_rectangle_bb(p1_x, p1_y, width, height, 0xFF0000); // Red player 1
+    draw_xpm(player1_pixmap, p1_x, p1_y);
     
     uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
     uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
-    draw_rectangle_bb(p2_x, p2_y, width, height, 0x0000FF); // Blue player 2
+    draw_xpm(player2_pixmap, p2_x, p2_y);
+}
+
+static uint8_t glyph_row(char c, int row) {
+    static const uint8_t digits[10][5] = {
+        {7, 5, 5, 5, 7},
+        {2, 6, 2, 2, 7},
+        {7, 1, 7, 4, 7},
+        {7, 1, 7, 1, 7},
+        {5, 5, 7, 1, 1},
+        {7, 4, 7, 1, 7},
+        {7, 4, 7, 5, 7},
+        {7, 1, 1, 1, 1},
+        {7, 5, 7, 5, 7},
+        {7, 5, 7, 1, 7}
+    };
+    static const uint8_t colon[5] = {0, 2, 0, 2, 0};
+
+    if (c >= '0' && c <= '9') {
+        return digits[c - '0'][row];
+    }
+    if (c == ':') {
+        return colon[row];
+    }
+    return 0;
+}
+
+static uint16_t text_width(const char *text, uint16_t scale) {
+    uint16_t width = 0;
+
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        width += (text[i] == ' ') ? (scale * 2) : (scale * 4);
+    }
+
+    return width;
+}
+
+static void draw_char(char c, uint16_t x, uint16_t y, uint16_t scale, uint32_t color) {
+    for (int row = 0; row < 5; row++) {
+        uint8_t bits = glyph_row(c, row);
+
+        for (int col = 0; col < 3; col++) {
+            if (bits & BIT(2 - col)) {
+                draw_rectangle_bb(x + (col * scale), y + (row * scale),
+                                  scale, scale, color);
+            }
+        }
+    }
+}
+
+static void draw_text(const char *text, uint16_t x, uint16_t y,
+                      uint16_t scale, uint32_t color) {
+    uint16_t cursor = x;
+
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        if (text[i] != ' ') {
+            draw_char(text[i], cursor, y, scale, color);
+        }
+        cursor += (text[i] == ' ') ? (scale * 2) : (scale * 4);
+    }
+}
+
+void video_draw_hud(int score_left, int score_right, int seconds_left) {
+    char hud[20];
+    uint16_t scale = 5;
+    uint16_t y = 24;
+
+    if (seconds_left < 0) seconds_left = 0;
+    snprintf(hud, sizeof(hud), "%d   %02d:%02d   %d",
+             score_left, seconds_left / 60, seconds_left % 60, score_right);
+
+    uint16_t x = (h_res - text_width(hud, scale)) / 2;
+    draw_text(hud, x + 2, y + 2, scale, 0x000000);
+    draw_text(hud, x, y, scale, 0xFFFFFF);
 }
 
 static void draw_cursor_pixel(int x, int y, uint32_t color) {
