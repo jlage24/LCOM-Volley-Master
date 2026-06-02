@@ -133,4 +133,100 @@ void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
         }
     }
 }
+
+/* -------------------------------------------------------- */
+/* 7-segment digit renderer for score HUD                   */
+/* -------------------------------------------------------- */
+
+/*
+ * Segment layout:
+ *
+ *   -0-
+ *  |   |
+ *  5   1
+ *  |   |
+ *   -6-
+ *  |   |
+ *  4   2
+ *  |   |
+ *   -3-
+ */
+
+/* Which segments are lit for digits 0-9 (bit flags, segment 0 = bit 0). */
+static const uint8_t seg_table[10] = {
+    /* 0 */ 0x3F, /* segments 0,1,2,3,4,5 */
+    /* 1 */ 0x06, /* segments 1,2 */
+    /* 2 */ 0x5B, /* segments 0,1,3,4,6 */
+    /* 3 */ 0x4F, /* segments 0,1,2,3,6 */
+    /* 4 */ 0x66, /* segments 1,2,5,6 */
+    /* 5 */ 0x6D, /* segments 0,2,3,5,6 */
+    /* 6 */ 0x7D, /* segments 0,2,3,4,5,6 */
+    /* 7 */ 0x07, /* segments 0,1,2 */
+    /* 8 */ 0x7F, /* segments 0,1,2,3,4,5,6 */
+    /* 9 */ 0x6F, /* segments 0,1,2,3,5,6 */
+};
+
+/* Segment dimensions. */
+#define SEG_W  20   /* horizontal segment width  */
+#define SEG_H   4   /* horizontal segment height */
+#define SEG_VW  4   /* vertical segment width    */
+#define SEG_VH 16   /* vertical segment height   */
+
+static void draw_7seg_digit(uint16_t ox, uint16_t oy, int digit, uint32_t color) {
+    if (digit < 0 || digit > 9) return;
+
+    uint8_t segs = seg_table[digit];
+
+    /* Seg 0 – top horizontal */
+    if (segs & (1 << 0))
+        draw_rectangle_bb(ox + SEG_VW, oy, SEG_W, SEG_H, color);
+
+    /* Seg 1 – upper right vertical */
+    if (segs & (1 << 1))
+        draw_rectangle_bb(ox + SEG_VW + SEG_W, oy + SEG_H, SEG_VW, SEG_VH, color);
+
+    /* Seg 2 – lower right vertical */
+    if (segs & (1 << 2))
+        draw_rectangle_bb(ox + SEG_VW + SEG_W, oy + SEG_H + SEG_VH + SEG_H, SEG_VW, SEG_VH, color);
+
+    /* Seg 3 – bottom horizontal */
+    if (segs & (1 << 3))
+        draw_rectangle_bb(ox + SEG_VW, oy + SEG_H + SEG_VH + SEG_H + SEG_VH, SEG_W, SEG_H, color);
+
+    /* Seg 4 – lower left vertical */
+    if (segs & (1 << 4))
+        draw_rectangle_bb(ox, oy + SEG_H + SEG_VH + SEG_H, SEG_VW, SEG_VH, color);
+
+    /* Seg 5 – upper left vertical */
+    if (segs & (1 << 5))
+        draw_rectangle_bb(ox, oy + SEG_H, SEG_VW, SEG_VH, color);
+
+    /* Seg 6 – middle horizontal */
+    if (segs & (1 << 6))
+        draw_rectangle_bb(ox + SEG_VW, oy + SEG_H + SEG_VH, SEG_W, SEG_H, color);
+}
+
+/* Digit glyph total width/height for spacing. */
+#define DIGIT_W  (SEG_VW + SEG_W + SEG_VW)  /* 28 px */
+#define DIGIT_GAP 6
+
+void video_draw_score(int score_p1, int score_p2) {
+    if (score_p1 < 0) score_p1 = 0;
+    if (score_p2 < 0) score_p2 = 0;
+
+    int tens, ones;
+
+    /* Player 1 score – left side, red tint. */
+    tens = (score_p1 / 10) % 10;
+    ones = score_p1 % 10;
+    draw_7seg_digit(380, 40, tens, 0xFF4444);
+    draw_7seg_digit(380 + DIGIT_W + DIGIT_GAP, 40, ones, 0xFF4444);
+
+    /* Player 2 score – right side, blue tint. */
+    tens = (score_p2 / 10) % 10;
+    ones = score_p2 % 10;
+    draw_7seg_digit(610, 40, tens, 0x4488FF);
+    draw_7seg_digit(610 + DIGIT_W + DIGIT_GAP, 40, ones, 0x4488FF);
+}
+
 #pragma clang optimize on

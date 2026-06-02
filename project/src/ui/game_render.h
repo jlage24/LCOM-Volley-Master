@@ -17,6 +17,7 @@ void video_draw_ball(Ball *b);
 void video_draw_players(Player *p1, Player *p2);
 void video_draw_cursor(int x, int y);
 void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y);
+void video_draw_score(int score_p1, int score_p2);
 
 
 #endif /* _GAME_RENDER_H_ */
