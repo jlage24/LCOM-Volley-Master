@@ -10,6 +10,7 @@
 #define NET_X       512
 #define NET_HEIGHT  160
 #define WIN_SCORE   5
+#define GAME_TIME_SECONDS 60
 #define GRAVITY     0.4f
 
 typedef enum {

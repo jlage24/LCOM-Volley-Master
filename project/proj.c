@@ -56,17 +56,26 @@ int (proj_main_loop)(int argc, char *argv[]) {
     if (video_init_back_buffer() != 0) return 1;
 
     if (load_all_assets() != 0) {
+        free_all_assets();
+        video_free_back_buffer();
         vg_exit(); 
         return 1;
     }
 
     game_init();
 
-    if (kbd_subscribe_int(&kbd_irq_set) != 0) return 1;
+    if (kbd_subscribe_int(&kbd_irq_set) != 0) {
+        timer_cleanup();
+        free_all_assets();
+        video_free_back_buffer();
+        vg_exit();
+        return 1;
+    }
 
     if (mouse_subscribe_int(&mouse_irq_set) != 0) {
         kbd_unsubscribe_int();
         timer_cleanup();
+        free_all_assets();
         video_free_back_buffer();
         vg_exit();
         return 1;
@@ -125,6 +134,7 @@ int (proj_main_loop)(int argc, char *argv[]) {
     timer_cleanup();
     kbd_unsubscribe_int();
     
+    free_all_assets();
     video_free_back_buffer(); 
     vg_exit();
 
