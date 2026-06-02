@@ -3,14 +3,14 @@
 
 #include "game.h"
 
-/* Player characteristics and ingame logic*/
+/* Player movement constants. */
 #define PLAYER1_SPEED   5.0f
 #define JUMP_IMPULSE   -8.0f
 #define PLAYER_WIDTH    32
 #define PLAYER_HEIGHT   64
 
 void player1_update(Player *p);
+void player2_update(Player *p);
 void player_init(Player *p, float start_x);
 
 #endif
-

@@ -12,7 +12,6 @@
 #define SCANCODE_ESC    0x01
 #define SCANCODE_ENTER  0x1C
 
-/* Keyboard state exposed to game_update() */
 typedef struct {
     bool move_left;
     bool move_right;
@@ -21,13 +20,12 @@ typedef struct {
     bool enter;
 } KeyboardState;
 
-/* Called from main.c on every keyboard interrupt */
+/* Called on each keyboard interrupt. */
 void keyboard_handle(uint8_t scancode);
 
-/* game_update() reads this to know what Player 1 is doing */
 const KeyboardState *get_keyboard_state(void);
 
-/* Reset jump/pause after game_update() consumes them */
+/* Reset one-shot key events after the frame uses them. */
 void keyboard_clear_events(void);
 
 #endif /* _KEYBOARD_H_ */

@@ -1,37 +1,54 @@
 #include "player.h"
-#include "../input/keyboard.h"
+#include "../devices/keyboard.h"
+#include "../devices/mouse.h"
 #include "game.h"
 
 void player1_update(Player *p) {
     const KeyboardState *kb = get_keyboard_state();
 
-    /* Horizontal movement */
     if (kb->move_left)  p->x -= PLAYER1_SPEED;
     if (kb->move_right) p->x += PLAYER1_SPEED;
 
-    /* Clamp to left half of court */
     if (p->x < PLAYER_WIDTH / 2)        p->x = PLAYER_WIDTH / 2;
     if (p->x > NET_X - PLAYER_WIDTH / 2) p->x = NET_X - PLAYER_WIDTH / 2;
 
-    /* Jump — only if on ground */
+    /* Jump only if the player is on the ground. */
     if (kb->jump && p->on_ground) {
         p->vy = JUMP_IMPULSE;
         p->on_ground = false;
     }
 
-    /* Apply gravity */
     p->vy += GRAVITY;
     p->y  += p->vy;
 
-    /* Floor collision */
     if (p->y >= FLOOR_Y - PLAYER_HEIGHT / 2) {
         p->y = FLOOR_Y - PLAYER_HEIGHT / 2;
         p->vy = 0;
         p->on_ground = true;
     }
+}
 
-    /* Consume events */
-    keyboard_clear_events();
+void player2_update(Player *p) {
+    const float mouse_sensitivity = 1.5f;
+
+    p->x += (float)mouse_state.dx * mouse_sensitivity;
+
+    if (p->x < NET_X + PLAYER_WIDTH / 2) p->x = NET_X + PLAYER_WIDTH / 2;
+    if (p->x > H_RES - PLAYER_WIDTH / 2) p->x = H_RES - PLAYER_WIDTH / 2;
+
+    if (mouse_state.left_button && p->on_ground) {
+        p->vy = JUMP_IMPULSE;
+        p->on_ground = false;
+    }
+
+    p->vy += GRAVITY;
+    p->y  += p->vy;
+
+    if (p->y >= FLOOR_Y - PLAYER_HEIGHT / 2) {
+        p->y = FLOOR_Y - PLAYER_HEIGHT / 2;
+        p->vy = 0;
+        p->on_ground = true;
+    }
 }
 
 void player_init(Player *p, float start_x) {

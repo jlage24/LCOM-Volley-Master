@@ -39,9 +39,9 @@ int vg_draw_pixel_bb(uint16_t x, uint16_t y, uint32_t color) {
     unsigned int offset = (y * h_res + x) * bytes_per_pixel;
     uint8_t *pixel = (uint8_t*)back_buffer + offset;
     
-    pixel[0] = color & 0xFF;             // Azul
-    pixel[1] = (color >> 8) & 0xFF;      // Verde
-    pixel[2] = (color >> 16) & 0xFF;     // Vermelho
+    pixel[0] = color & 0xFF;             // Blue
+    pixel[1] = (color >> 8) & 0xFF;      // Green
+    pixel[2] = (color >> 16) & 0xFF;     // Red
     
     return 0;
 }
@@ -60,7 +60,7 @@ void video_draw_net() {
     uint16_t start_x = 512 - (net_width / 2); 
     uint16_t start_y = 680 - 160;             
     
-    draw_rectangle_bb(start_x, start_y, net_width, 160, 0xFFFFFF); // 15 = Branco (Rede)
+    draw_rectangle_bb(start_x, start_y, net_width, 160, 0xFFFFFF); // White net
 }
 
 void video_draw_ball(Ball *b) {
@@ -69,7 +69,7 @@ void video_draw_ball(Ball *b) {
     uint16_t draw_y = (uint16_t)(b->y) - radius;
     uint16_t width = radius * 2;
     
-    draw_rectangle_bb(draw_x, draw_y, width, width, 0x00FF00); // 10 = Verde Claro (Bola)
+    draw_rectangle_bb(draw_x, draw_y, width, width, 0x00FF00); // Light green ball
 }
 
 void video_draw_players(Player *p1, Player *p2) {
@@ -78,11 +78,11 @@ void video_draw_players(Player *p1, Player *p2) {
     
     uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
     uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
-    draw_rectangle_bb(p1_x, p1_y, width, height, 0xFF0000); // 4 = Vermelho (Player 1)
+    draw_rectangle_bb(p1_x, p1_y, width, height, 0xFF0000); // Red player 1
     
     uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
     uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
-    draw_rectangle_bb(p2_x, p2_y, width, height, 0x0000FF); // 1 = Azul Escuro (Player 2)
+    draw_rectangle_bb(p2_x, p2_y, width, height, 0x0000FF); // Blue player 2
 }
 
 void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
@@ -99,4 +99,3 @@ void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
     }
 }
 #pragma clang optimize on
-
