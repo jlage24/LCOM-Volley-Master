@@ -15,9 +15,9 @@ void draw_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 void video_draw_net();
 void video_draw_ball(Ball *b);
 void video_draw_players(Player *p1, Player *p2);
+void video_draw_cursor(int x, int y);
 void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y);
 
 
 #endif /* _GAME_RENDER_H_ */
-
 
