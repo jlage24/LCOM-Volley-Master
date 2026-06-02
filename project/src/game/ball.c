@@ -1,9 +1,9 @@
 #include "ball.h"
 
 #define BALL_RADIUS 16
-#define BALL_BOUNCE 0.75f
+#define BALL_BOUNCE 0.85f
 #define BALL_START_SPEED_X 5.0f
-#define BALL_START_SPEED_Y -6.0f
+#define BALL_START_SPEED_Y -8.0f
 
 void ball_init(Ball *b, int direction) {
     if (direction == 0) {
@@ -93,8 +93,19 @@ void ball_collide_with_player(Ball *b, const Player *p, int direction) {
     if (b_right > p_left && b_left < p_right &&
         b_bottom > p_top && b_top < p_bottom) {
         
-        // Place ball just outside player
-        // To keep it simple and robust, we push the ball out along the shortest overlapping axis
+        // Determine rebound direction from relative position
+        // Positive offset = ball is to the right of the player center
+        // Negative offset = ball is to the left
+        float offset = b->x - p->x;
+        float half_w = PLAYER_WIDTH / 2.0f;
+
+        // Normalize offset to [-1, 1] range
+        float norm = offset / half_w;
+        if (norm > 1.0f)  norm = 1.0f;
+        if (norm < -1.0f) norm = -1.0f;
+
+        // Place ball just outside player based on where the ball actually is
+        // Use the relative position (not the forced direction) to pick the exit side
         float overlap_left = b_right - p_left;
         float overlap_right = p_right - b_left;
         float overlap_top = b_bottom - p_top;
@@ -112,7 +123,24 @@ void ball_collide_with_player(Ball *b, const Player *p, int direction) {
         else if (side == 2) b->y = p_top - BALL_RADIUS;
         else if (side == 3) b->y = p_bottom + BALL_RADIUS;
         
-        b->vy = -9.0f;
-        b->vx = 6.0f * direction;
+        // Directional horizontal impulse based on where the ball hit
+        // Base speed range: 2 (center hit) to 8 (edge hit)
+        float base_speed = 2.0f + 6.0f * (norm < 0 ? -norm : norm);
+        b->vx = (norm >= 0 ? 1.0f : -1.0f) * base_speed;
+        b->vy = -12.0f;
+
+        // Momentum transfer from player movement
+        float momentum_weight = 0.5f;
+        b->vx += p->vx * momentum_weight;
+        b->vy += p->vy * momentum_weight;
+
+        // Clamp velocities to keep physics stable
+        float max_vx = 15.0f;
+        float max_vy = 15.0f;
+
+        if (b->vx > max_vx)  b->vx = max_vx;
+        if (b->vx < -max_vx) b->vx = -max_vx;
+        if (b->vy > max_vy)  b->vy = max_vy;
+        if (b->vy < -max_vy) b->vy = -max_vy;
     }
 }

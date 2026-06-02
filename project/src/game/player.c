@@ -6,8 +6,9 @@
 void player1_update(Player *p) {
     const KeyboardState *kb = get_keyboard_state();
 
-    if (kb->move_left)  p->x -= PLAYER1_SPEED;
-    if (kb->move_right) p->x += PLAYER1_SPEED;
+    p->vx = 0;
+    if (kb->move_left)  { p->x -= PLAYER1_SPEED; p->vx = -PLAYER1_SPEED; }
+    if (kb->move_right) { p->x += PLAYER1_SPEED; p->vx =  PLAYER1_SPEED; }
 
     if (p->x < PLAYER_WIDTH / 2)        p->x = PLAYER_WIDTH / 2;
     if (p->x > NET_X - PLAYER_WIDTH / 2) p->x = NET_X - PLAYER_WIDTH / 2;
@@ -31,7 +32,8 @@ void player1_update(Player *p) {
 void player2_update(Player *p) {
     const float mouse_sensitivity = 1.5f;
 
-    p->x += (float)mouse_state.dx * mouse_sensitivity;
+    p->vx = (float)mouse_state.dx * mouse_sensitivity;
+    p->x += p->vx;
 
     if (p->x < NET_X + PLAYER_WIDTH / 2) p->x = NET_X + PLAYER_WIDTH / 2;
     if (p->x > H_RES - PLAYER_WIDTH / 2) p->x = H_RES - PLAYER_WIDTH / 2;
@@ -54,6 +56,7 @@ void player2_update(Player *p) {
 void player_init(Player *p, float start_x) {
     p->x = start_x;
     p->y = FLOOR_Y - PLAYER_HEIGHT / 2;
+    p->vx = 0;
     p->vy = 0;
     p->on_ground = true;
     p->score = 0;

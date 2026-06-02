@@ -10,7 +10,7 @@
 #define NET_X       512
 #define NET_HEIGHT  160
 #define WIN_SCORE   5
-#define GRAVITY     0.4f
+#define GRAVITY     0.2f
 
 typedef enum {
     STATE_MENU,
@@ -31,6 +31,7 @@ typedef struct {
 typedef struct {
     float x;
     float y;
+    float vx;
     float vy;
     bool on_ground;
     int score;
