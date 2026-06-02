@@ -1,5 +1,6 @@
 #include "game_render.h"
 #include "assets.h"
+#include "../game/player.h"
 #include "../../../lab5/video.h" 
 #include <stdlib.h> 
 #include <string.h>
@@ -73,8 +74,8 @@ void video_draw_ball(Ball *b) {
 }
 
 void video_draw_players(Player *p1, Player *p2) {
-    uint16_t width = 50;
-    uint16_t height = 100;
+    uint16_t width = PLAYER_WIDTH;
+    uint16_t height = PLAYER_HEIGHT;
     
     uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
     uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
@@ -83,6 +84,40 @@ void video_draw_players(Player *p1, Player *p2) {
     uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
     uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
     draw_rectangle_bb(p2_x, p2_y, width, height, 0x0000FF); // Blue player 2
+}
+
+static void draw_cursor_pixel(int x, int y, uint32_t color) {
+    if (x < 0 || y < 0 || x >= h_res || y >= v_res) {
+        return;
+    }
+
+    vg_draw_pixel_bb((uint16_t)x, (uint16_t)y, color);
+}
+
+void video_draw_cursor(int x, int y) {
+    const uint32_t outline = 0x000000;
+    const uint32_t fill = 0xFFFFFF;
+
+    for (int i = 0; i < 18; i++) {
+        draw_cursor_pixel(x, y + i, outline);
+        draw_cursor_pixel(x + 1, y + i, fill);
+    }
+
+    for (int i = 0; i < 12; i++) {
+        draw_cursor_pixel(x + i, y + i, outline);
+        draw_cursor_pixel(x + i + 1, y + i, fill);
+    }
+
+    for (int i = 0; i < 7; i++) {
+        draw_cursor_pixel(x + 5 + i, y + 12 + i, outline);
+        draw_cursor_pixel(x + 6 + i, y + 12 + i, fill);
+    }
+
+    for (int row = 0; row < 2; row++) {
+        for (int col = 0; col < 4; col++) {
+            draw_cursor_pixel(x + 6 + col, y + 13 + row, fill);
+        }
+    }
 }
 
 void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
