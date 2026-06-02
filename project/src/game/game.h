@@ -10,8 +10,12 @@
 #define NET_X       512
 #define NET_HEIGHT  160
 #define WIN_SCORE   5
+<<<<<<< HEAD
 #define GAME_TIME_SECONDS 60
 #define GRAVITY     0.4f
+=======
+#define GRAVITY     0.2f
+>>>>>>> proj/torrao
 
 typedef enum {
     STATE_MENU,
@@ -32,6 +36,7 @@ typedef struct {
 typedef struct {
     float x;
     float y;
+    float vx;
     float vy;
     bool on_ground;
     int score;
