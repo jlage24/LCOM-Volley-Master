@@ -16,6 +16,7 @@ void video_draw_net();
 void video_draw_ball(Ball *b);
 void video_draw_players(Player *p1, Player *p2);
 void video_draw_hud(int score_left, int score_right, int seconds_left);
+void video_draw_sudden_death_notice(int seconds, int frame_count);
 void video_draw_cursor(int x, int y);
 void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y);
 void draw_xpm_flipped_horizontal(xpm_image_t img, uint16_t x, uint16_t y);

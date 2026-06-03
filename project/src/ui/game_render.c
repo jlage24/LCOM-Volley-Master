@@ -152,6 +152,102 @@ static void draw_text(const char *text, uint16_t x, uint16_t y,
     }
 }
 
+static uint8_t wide_glyph_row(char c, int row) {
+    static const uint8_t letters[26][7] = {
+        {14, 17, 17, 31, 17, 17, 17}, // A
+        {30, 17, 17, 30, 17, 17, 30}, // B
+        {14, 17, 16, 16, 16, 17, 14}, // C
+        {30, 17, 17, 17, 17, 17, 30}, // D
+        {31, 16, 16, 30, 16, 16, 31}, // E
+        {31, 16, 16, 30, 16, 16, 16}, // F
+        {14, 17, 16, 19, 17, 17, 14}, // G
+        {17, 17, 17, 31, 17, 17, 17}, // H
+        {14, 4, 4, 4, 4, 4, 14},      // I
+        {7, 2, 2, 2, 2, 18, 12},      // J
+        {17, 18, 20, 24, 20, 18, 17}, // K
+        {16, 16, 16, 16, 16, 16, 31}, // L
+        {17, 27, 21, 21, 17, 17, 17}, // M
+        {17, 25, 21, 19, 17, 17, 17}, // N
+        {14, 17, 17, 17, 17, 17, 14}, // O
+        {30, 17, 17, 30, 16, 16, 16}, // P
+        {14, 17, 17, 17, 21, 18, 13}, // Q
+        {30, 17, 17, 30, 20, 18, 17}, // R
+        {15, 16, 16, 14, 1, 1, 30},   // S
+        {31, 4, 4, 4, 4, 4, 4},       // T
+        {17, 17, 17, 17, 17, 17, 14}, // U
+        {17, 17, 17, 17, 17, 10, 4},  // V
+        {17, 17, 17, 21, 21, 21, 10}, // W
+        {17, 17, 10, 4, 10, 17, 17},  // X
+        {17, 17, 10, 4, 4, 4, 4},     // Y
+        {31, 1, 2, 4, 8, 16, 31}      // Z
+    };
+
+    if (c >= 'a' && c <= 'z') {
+        c -= 'a' - 'A';
+    }
+
+    if (c >= 'A' && c <= 'Z') {
+        return letters[c - 'A'][row];
+    }
+
+    return 0;
+}
+
+static uint16_t wide_text_width(const char *text, uint16_t scale) {
+    uint16_t width = 0;
+
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        width += (text[i] == ' ') ? (scale * 4) : (scale * 6);
+    }
+
+    return width;
+}
+
+static void draw_wide_char(char c, uint16_t x, uint16_t y,
+                           uint16_t scale, uint32_t color) {
+    for (int row = 0; row < 7; row++) {
+        uint8_t bits = wide_glyph_row(c, row);
+
+        for (int col = 0; col < 5; col++) {
+            if (bits & BIT(4 - col)) {
+                draw_rectangle_bb(x + (col * scale), y + (row * scale),
+                                  scale, scale, color);
+            }
+        }
+    }
+}
+
+static void draw_wide_text(const char *text, uint16_t x, uint16_t y,
+                           uint16_t scale, uint32_t color) {
+    uint16_t cursor = x;
+
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        if (text[i] != ' ') {
+            draw_wide_char(text[i], cursor, y, scale, color);
+        }
+        cursor += (text[i] == ' ') ? (scale * 4) : (scale * 6);
+    }
+}
+
+void video_draw_sudden_death_notice(int seconds, int frame_count) {
+    const char *text = "SUDDEN DEATH";
+    uint16_t scale = (frame_count < 15 || (frame_count >= 30 && frame_count < 45)) ? 7 : 6;
+    uint16_t text_w = wide_text_width(text, scale);
+    uint16_t text_h = 7 * scale;
+    uint16_t x = (h_res - text_w) / 2;
+    uint16_t y = 105;
+    uint32_t color = (frame_count < 30) ? 0xFF3A2E : 0xFFFFFF;
+
+    if (seconds >= 3) {
+        return;
+    }
+
+    draw_rectangle_bb(x - 22, y - 18, text_w + 44, text_h + 36, 0x120508);
+    draw_rectangle_bb(x - 16, y - 12, text_w + 32, text_h + 24, 0x381004);
+    draw_wide_text(text, x + 3, y + 3, scale, 0x000000);
+    draw_wide_text(text, x, y, scale, color);
+}
+
 void video_draw_hud(int score_left, int score_right, int seconds_left) {
     char hud[20];
     uint16_t scale = 5;

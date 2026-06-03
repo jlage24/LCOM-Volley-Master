@@ -244,6 +244,9 @@ void game_render(void) {
         video_draw_net();
         video_draw_ball(&g_ball);
         video_draw_players(&g_player1, &g_player2);
+        if (sudden_death) {
+            video_draw_sudden_death_notice(sudden_death_seconds, timer_frame_count);
+        }
         
     }
 
@@ -268,4 +271,3 @@ void game_render(void) {
 bool game_should_exit(void) {
     return should_exit;
 }
-
