@@ -268,9 +268,13 @@ static void draw_character_card(int index, uint16_t x, uint16_t y,
 }
 
 void video_draw_character_select(int selected_p1, int selected_p2, bool choosing_p2) {
-    draw_xpm(menu_pixmap, 0, 0);
+    draw_rectangle_bb(0, 0, h_res, v_res, 0x07101C);
     draw_rectangle_bb(0, 0, h_res, 92, 0x111A28);
     draw_rectangle_bb(0, 92, h_res, 8, 0xE53A2C);
+    draw_rectangle_bb(0, 100, h_res, 18, 0x0B1522);
+    draw_rectangle_bb(0, 118, h_res, 18, 0x0E1928);
+    draw_rectangle_bb(0, 136, h_res, 18, 0x101D2E);
+    draw_rectangle_bb(0, 154, h_res, 18, 0x122035);
     draw_rectangle_bb(42, 238, 940, 300, 0x07101C);
     draw_rectangle_bb(42, 238, 940, 6, 0x263443);
     draw_rectangle_bb(42, 532, 940, 6, 0x263443);
