@@ -56,6 +56,27 @@ void draw_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
     }
 }
 
+static void blend_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
+                               uint8_t keep_percent) {
+    for (uint16_t i = 0; i < height; i++) {
+        for (uint16_t j = 0; j < width; j++) {
+            uint16_t px = x + j;
+            uint16_t py = y + i;
+
+            if (px >= h_res || py >= v_res) {
+                continue;
+            }
+
+            unsigned int offset = (py * h_res + px) * bytes_per_pixel;
+            uint8_t *pixel = (uint8_t*)back_buffer + offset;
+
+            pixel[0] = (uint8_t)((pixel[0] * keep_percent) / 100);
+            pixel[1] = (uint8_t)((pixel[1] * keep_percent) / 100);
+            pixel[2] = (uint8_t)((pixel[2] * keep_percent) / 100);
+        }
+    }
+}
+
 
 void video_draw_net() {
     uint16_t net_width = 10;
@@ -262,6 +283,23 @@ static void draw_character_card(int index, uint16_t x, uint16_t y,
     draw_rectangle_bb(x + 6, y + 6, CHARACTER_CARD_W - 12, CHARACTER_CARD_H - 12, 0x263443);
 
     draw_xpm(player_pixmaps[index], x + 6, y + 10);
+
+    if (p1_selected) {
+        uint16_t lock_x = x + 46;
+        uint16_t lock_y = y + 72;
+
+        blend_rectangle_bb(x + 6, y + 10, CHARACTER_CARD_W - 12, 180, 38);
+        draw_rectangle_bb(lock_x + 18, lock_y, 28, 8, 0x000000);
+        draw_rectangle_bb(lock_x + 10, lock_y + 8, 8, 28, 0x000000);
+        draw_rectangle_bb(lock_x + 46, lock_y + 8, 8, 28, 0x000000);
+        draw_rectangle_bb(lock_x + 18, lock_y + 8, 28, 8, 0xFFFFFF);
+        draw_rectangle_bb(lock_x + 18, lock_y + 16, 8, 20, 0xFFFFFF);
+        draw_rectangle_bb(lock_x + 38, lock_y + 16, 8, 20, 0xFFFFFF);
+        draw_rectangle_bb(lock_x + 2, lock_y + 34, 60, 50, 0x000000);
+        draw_rectangle_bb(lock_x + 8, lock_y + 40, 48, 38, 0xF2B51F);
+        draw_rectangle_bb(lock_x + 28, lock_y + 52, 8, 14, 0x000000);
+        draw_rectangle_bb(lock_x + 24, lock_y + 48, 16, 10, 0x000000);
+    }
 
     draw_rectangle_bb(x + 6, y + 190, CHARACTER_CARD_W - 12, 28, 0x070B12);
     draw_wide_text(player_names[index], x + 12, y + 196, 3, name_color);
