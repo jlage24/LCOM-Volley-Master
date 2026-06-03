@@ -80,11 +80,13 @@ void video_draw_players(Player *p1, Player *p2) {
     
     uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
     uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
-    draw_xpm(player1_pixmap, p1_x, p1_y);
+    if (p1->facing_right) draw_xpm(player1_pixmap, p1_x, p1_y);
+    else draw_xpm_flipped_horizontal(player1_pixmap, p1_x, p1_y);
     
     uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
     uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
-    draw_xpm(player2_pixmap, p2_x, p2_y);
+    if (p2->facing_right) draw_xpm(player2_pixmap, p2_x, p2_y);
+    else draw_xpm_flipped_horizontal(player2_pixmap, p2_x, p2_y);
 }
 
 static uint8_t glyph_row(char c, int row) {
@@ -203,6 +205,20 @@ void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
             uint32_t color = map[i * img.width + j];
             if (color != transparent) { 
                 vg_draw_pixel_bb(x + j, y + i, color); 
+            }
+        }
+    }
+}
+
+void draw_xpm_flipped_horizontal(xpm_image_t img, uint16_t x, uint16_t y) {
+    uint32_t *map = (uint32_t *)img.bytes;
+    uint32_t transparent = xpm_transparency_color(img.type);
+
+    for (uint16_t i = 0; i < img.height; i++) {
+        for (uint16_t j = 0; j < img.width; j++) {
+            uint32_t color = map[i * img.width + (img.width - 1 - j)];
+            if (color != transparent) {
+                vg_draw_pixel_bb(x + j, y + i, color);
             }
         }
     }

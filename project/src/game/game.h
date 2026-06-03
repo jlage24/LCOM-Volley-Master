@@ -34,6 +34,7 @@ typedef struct {
     float y;
     float vx;
     float vy;
+    bool facing_right;
     bool on_ground;
     int score;
 } Player;
