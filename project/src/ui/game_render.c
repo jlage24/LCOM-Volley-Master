@@ -262,69 +262,86 @@ static void draw_centered_wide_text(const char *text, uint16_t y,
     draw_wide_text(text, x, y, scale, color);
 }
 
-static void draw_character_card(int index, uint16_t x, uint16_t y,
-                                bool p1_selected, bool p2_selected) {
-    uint32_t border = 0x283542;
-    uint32_t name_color = 0xFFFFFF;
+static void draw_leaf_block(int x, int y, uint32_t color) {
+    draw_rectangle_bb((uint16_t)x, (uint16_t)(y + 3), 14, 8, 0x173C16);
+    draw_rectangle_bb((uint16_t)(x + 3), (uint16_t)y, 8, 14, color);
+    draw_rectangle_bb((uint16_t)(x + 5), (uint16_t)(y + 2), 4, 10, 0x8EAE3D);
+}
 
-    if (p1_selected) {
-        border = 0xE53A2C;
-        name_color = 0xFF3A2E;
-    } else if (p2_selected) {
-        border = 0xF2B51F;
-        name_color = 0xF2B51F;
+static void draw_vine_between(int x0, int y0, int x1, int y1) {
+    const int steps = 22;
+
+    for (int i = 0; i <= steps; i++) {
+        int x = x0 + ((x1 - x0) * i) / steps;
+        int y = y0 + ((y1 - y0) * i) / steps;
+
+        draw_rectangle_bb((uint16_t)(x - 3), (uint16_t)(y - 3), 8, 8, 0x173C16);
+        draw_rectangle_bb((uint16_t)(x - 1), (uint16_t)(y - 1), 4, 4, 0x2D6D25);
+
+        if (i % 7 == 3) {
+            draw_leaf_block(x - 14, y - 6, 0x3E8A31);
+        } else if (i % 7 == 6) {
+            draw_leaf_block(x + 3, y - 5, 0x2F7628);
+        }
     }
+}
 
-    draw_rectangle_bb(x, y, CHARACTER_CARD_W, CHARACTER_CARD_H, 0x08111C);
-    draw_rectangle_bb(x, y, CHARACTER_CARD_W, 6, border);
-    draw_rectangle_bb(x, y + CHARACTER_CARD_H - 6, CHARACTER_CARD_W, 6, border);
-    draw_rectangle_bb(x, y, 6, CHARACTER_CARD_H, border);
-    draw_rectangle_bb(x + CHARACTER_CARD_W - 6, y, 6, CHARACTER_CARD_H, border);
-    draw_rectangle_bb(x + 6, y + 6, CHARACTER_CARD_W - 12, CHARACTER_CARD_H - 12, 0x263443);
+static void draw_leaf_lock(int x, int y) {
+    draw_rectangle_bb((uint16_t)(x + 18), (uint16_t)y, 36, 8, 0x102510);
+    draw_rectangle_bb((uint16_t)(x + 10), (uint16_t)(y + 8), 8, 30, 0x102510);
+    draw_rectangle_bb((uint16_t)(x + 54), (uint16_t)(y + 8), 8, 30, 0x102510);
+    draw_rectangle_bb((uint16_t)(x + 18), (uint16_t)(y + 8), 36, 8, 0x4E8A2E);
+    draw_rectangle_bb((uint16_t)(x + 18), (uint16_t)(y + 16), 8, 22, 0x4E8A2E);
+    draw_rectangle_bb((uint16_t)(x + 46), (uint16_t)(y + 16), 8, 22, 0x4E8A2E);
 
-    draw_xpm(player_pixmaps[index], x + 6, y + 10);
+    draw_rectangle_bb((uint16_t)(x + 2), (uint16_t)(y + 36), 68, 56, 0x0B1A0B);
+    draw_rectangle_bb((uint16_t)(x + 8), (uint16_t)(y + 42), 56, 44, 0x2F6D23);
+    draw_rectangle_bb((uint16_t)(x + 14), (uint16_t)(y + 48), 44, 32, 0x3E8A31);
+    draw_leaf_block(x + 6, y + 42, 0x4E9A36);
+    draw_leaf_block(x + 50, y + 42, 0x3E8A31);
+    draw_leaf_block(x + 12, y + 72, 0x3B7E2C);
+    draw_leaf_block(x + 44, y + 72, 0x4E9A36);
 
-    if (p1_selected) {
-        uint16_t lock_x = x + 46;
-        uint16_t lock_y = y + 72;
+    draw_rectangle_bb((uint16_t)(x + 30), (uint16_t)(y + 60), 14, 12, 0x071007);
+    draw_rectangle_bb((uint16_t)(x + 33), (uint16_t)(y + 70), 8, 12, 0x071007);
+}
 
-        blend_rectangle_bb(x + 6, y + 10, CHARACTER_CARD_W - 12, 180, 38);
-        draw_rectangle_bb(lock_x + 18, lock_y, 28, 8, 0x000000);
-        draw_rectangle_bb(lock_x + 10, lock_y + 8, 8, 28, 0x000000);
-        draw_rectangle_bb(lock_x + 46, lock_y + 8, 8, 28, 0x000000);
-        draw_rectangle_bb(lock_x + 18, lock_y + 8, 28, 8, 0xFFFFFF);
-        draw_rectangle_bb(lock_x + 18, lock_y + 16, 8, 20, 0xFFFFFF);
-        draw_rectangle_bb(lock_x + 38, lock_y + 16, 8, 20, 0xFFFFFF);
-        draw_rectangle_bb(lock_x + 2, lock_y + 34, 60, 50, 0x000000);
-        draw_rectangle_bb(lock_x + 8, lock_y + 40, 48, 38, 0xF2B51F);
-        draw_rectangle_bb(lock_x + 28, lock_y + 52, 8, 14, 0x000000);
-        draw_rectangle_bb(lock_x + 24, lock_y + 48, 16, 10, 0x000000);
-    }
+static void draw_locked_character_overlay(uint16_t x, uint16_t y) {
+    int center_x = x + CHARACTER_CARD_W / 2;
+    int center_y = y + 100;
 
-    draw_rectangle_bb(x + 6, y + 190, CHARACTER_CARD_W - 12, 28, 0x070B12);
-    draw_wide_text(player_names[index], x + 12, y + 196, 3, name_color);
+    blend_rectangle_bb(x + 8, y + 12, CHARACTER_CARD_W - 16, CHARACTER_CARD_H - 56, 35);
+    draw_vine_between(x + 8, y + 18, center_x, center_y);
+    draw_vine_between(x + CHARACTER_CARD_W - 8, y + 18, center_x, center_y);
+    draw_vine_between(x + 8, y + CHARACTER_CARD_H - 60, center_x, center_y);
+    draw_vine_between(x + CHARACTER_CARD_W - 8, y + CHARACTER_CARD_H - 60, center_x, center_y);
+    draw_leaf_lock(center_x - 36, center_y - 36);
+}
+
+static void draw_character_selection_marker(uint16_t x, uint16_t y, uint32_t color) {
+    draw_rectangle_bb(x, y, CHARACTER_CARD_W, 6, color);
+    draw_rectangle_bb(x, y + CHARACTER_CARD_H - 6, CHARACTER_CARD_W, 6, color);
+    draw_rectangle_bb(x, y, 6, CHARACTER_CARD_H, color);
+    draw_rectangle_bb(x + CHARACTER_CARD_W - 6, y, 6, CHARACTER_CARD_H, color);
 }
 
 void video_draw_character_select(int selected_p1, int selected_p2, bool choosing_p2) {
-    draw_rectangle_bb(0, 0, h_res, v_res, 0x07101C);
-    draw_rectangle_bb(0, 0, h_res, 92, 0x111A28);
-    draw_rectangle_bb(0, 92, h_res, 8, 0xE53A2C);
-    draw_rectangle_bb(0, 100, h_res, 18, 0x0B1522);
-    draw_rectangle_bb(0, 118, h_res, 18, 0x0E1928);
-    draw_rectangle_bb(0, 136, h_res, 18, 0x101D2E);
-    draw_rectangle_bb(0, 154, h_res, 18, 0x122035);
-    draw_rectangle_bb(42, 238, 940, 300, 0x07101C);
-    draw_rectangle_bb(42, 238, 940, 6, 0x263443);
-    draw_rectangle_bb(42, 532, 940, 6, 0x263443);
+    draw_xpm(character_select_pixmap, 0, 0);
 
-    draw_centered_wide_text("SELECT A CHARACTER", 28, 6, 0xFFFFFF);
-    draw_centered_wide_text(choosing_p2 ? "PLAYER TWO" : "PLAYER ONE", 124, 5,
-                            choosing_p2 ? 0xF2B51F : 0xFF3A2E);
+    if (choosing_p2) {
+        draw_rectangle_bb(350, 142, 330, 56, 0x4B260C);
+        draw_centered_wide_text("PLAYER TWO", 154, 5, 0xF2B51F);
+    }
 
     for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
         uint16_t x = CHARACTER_CARD_X + i * (CHARACTER_CARD_W + CHARACTER_CARD_GAP);
-        draw_character_card(i, x, CHARACTER_CARD_Y,
-                            selected_p1 == i, selected_p2 == i);
+
+        if (selected_p1 == i) {
+            draw_character_selection_marker(x, CHARACTER_CARD_Y, 0x5DAA3C);
+            draw_locked_character_overlay(x, CHARACTER_CARD_Y);
+        } else if (selected_p2 == i) {
+            draw_character_selection_marker(x, CHARACTER_CARD_Y, 0xF2B51F);
+        }
     }
 }
 
