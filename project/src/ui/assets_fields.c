@@ -9,12 +9,10 @@
 
 
 void load_field_assets() {
-    xpm_load((xpm_map_t) beach_volley, XPM_8_8_8_8, &beach_volley_pixmap);
-    xpm_load((xpm_map_t) desert_volley, XPM_8_8_8_8, &desert_volley_pixmap);
-    xpm_load((xpm_map_t) jungle_volley, XPM_8_8_8_8, &jungle_volley_pixmap);
-    xpm_load((xpm_map_t) ice_volley, XPM_8_8_8_8, &ice_volley_pixmap);
+    xpm_load((xpm_map_t) beach_field_xpm, XPM_8_8_8_8, &beach_volley_pixmap);
+    xpm_load((xpm_map_t) desert_field_xpm, XPM_8_8_8_8, &desert_volley_pixmap);
+    xpm_load((xpm_map_t) jungle_field_xpm, XPM_8_8_8_8, &jungle_volley_pixmap);
+    xpm_load((xpm_map_t) ice_field_xpm, XPM_8_8_8_8, &ice_volley_pixmap);
 }
 
 #pragma clang optimize on
-
-
