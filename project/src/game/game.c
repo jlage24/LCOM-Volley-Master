@@ -28,6 +28,7 @@ static int cursor_x = H_RES / 2;
 static int cursor_y = V_RES / 2;
 static bool mouse_button_was_down = false;
 static bool should_exit = false;
+static bool sudden_death = false;
 
 static bool point_inside_rect(int px, int py, int x, int y, int w, int h) {
     return px >= x && px < x + w && py >= y && py < y + h;
@@ -46,6 +47,51 @@ static void update_menu_cursor(void) {
 static int finish_update(int status) {
     mouse_button_was_down = mouse_state.left_button;
     return status;
+}
+
+static void reset_round(int ball_direction) {
+    ball_init(&g_ball, ball_direction);
+
+    player_init(&g_player1, 220.0f);
+    player_init(&g_player2, 800.0f);
+}
+
+static void check_win_after_point(void) {
+    if (sudden_death) {
+        current_state = STATE_END;
+        return;
+    }
+
+    if (score_p1 >= WIN_SCORE || score_p2 >= WIN_SCORE) {
+        if (score_p1 == score_p2) {
+            sudden_death = true;
+        } else {
+            current_state = STATE_END;
+        }
+    }
+}
+
+static void update_game_timer(void) {
+    if (sudden_death) {
+        return;
+    }
+
+    if (game_seconds_left > 0) {
+        timer_frame_count++;
+
+        if (timer_frame_count >= 60) {
+            timer_frame_count = 0;
+            game_seconds_left--;
+        }
+    }
+
+    if (game_seconds_left == 0) {
+        if (score_p1 == score_p2) {
+            sudden_death = true;
+        } else {
+            current_state = STATE_END;
+        }
+    }
 }
 
 void game_init(void) {
