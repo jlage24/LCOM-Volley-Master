@@ -56,7 +56,6 @@ void draw_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
     }
 }
 
-
 void video_draw_net() {
     uint16_t net_width = 10;
     uint16_t start_x = 512 - (net_width / 2); 
@@ -228,6 +227,48 @@ static void draw_wide_text(const char *text, uint16_t x, uint16_t y,
             draw_wide_char(text[i], cursor, y, scale, color);
         }
         cursor += (text[i] == ' ') ? (scale * 4) : (scale * 6);
+    }
+}
+
+static void draw_centered_wide_text(const char *text, uint16_t y,
+                                    uint16_t scale, uint32_t color) {
+    uint16_t x = (h_res - wide_text_width(text, scale)) / 2;
+
+    draw_wide_text(text, x + 3, y + 3, scale, 0x000000);
+    draw_wide_text(text, x, y, scale, color);
+}
+
+static void draw_locked_character_overlay(uint16_t x, uint16_t y) {
+    draw_xpm(locked_character_pixmap, x, y);
+}
+
+static void draw_character_selection_marker(uint16_t x, uint16_t y, uint32_t color) {
+    draw_rectangle_bb(x, y, CHARACTER_CARD_W, 3, color);
+    draw_rectangle_bb(x, y + CHARACTER_CARD_H - 3, CHARACTER_CARD_W, 3, color);
+    draw_rectangle_bb(x, y, 3, CHARACTER_CARD_H, color);
+    draw_rectangle_bb(x + CHARACTER_CARD_W - 3, y, 3, CHARACTER_CARD_H, color);
+}
+
+void video_draw_character_select(int selected_p1, int selected_p2, bool choosing_p2) {
+    static const uint16_t character_card_x[PLAYER_CHARACTER_COUNT] = {
+        112, 247, 381, 514, 647, 780
+    };
+
+    draw_xpm(character_select_pixmap, 0, 0);
+
+    if (choosing_p2) {
+        draw_rectangle_bb(350, 142, 330, 56, 0x4B260C);
+        draw_centered_wide_text("PLAYER TWO", 154, 5, 0xF2B51F);
+    }
+
+    for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
+        uint16_t x = character_card_x[i];
+
+        if (selected_p1 == i) {
+            draw_locked_character_overlay(x + 3, CHARACTER_LOCK_Y);
+        } else if (selected_p2 == i) {
+            draw_character_selection_marker(x, CHARACTER_CARD_Y, 0xD58C2A);
+        }
     }
 }
 
