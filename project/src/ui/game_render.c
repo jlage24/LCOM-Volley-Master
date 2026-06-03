@@ -78,13 +78,17 @@ void video_draw_players(Player *p1, Player *p2) {
     
     uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
     uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
-    if (p1->facing_right) draw_xpm(player1_pixmap, p1_x, p1_y);
-    else draw_xpm_flipped_horizontal(player1_pixmap, p1_x, p1_y);
+    if (player1_pixmap != NULL) {
+        if (p1->facing_right) draw_xpm(*player1_pixmap, p1_x, p1_y);
+        else draw_xpm_flipped_horizontal(*player1_pixmap, p1_x, p1_y);
+    }
     
     uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
     uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
-    if (p2->facing_right) draw_xpm(player2_pixmap, p2_x, p2_y);
-    else draw_xpm_flipped_horizontal(player2_pixmap, p2_x, p2_y);
+    if (player2_pixmap != NULL) {
+        if (p2->facing_right) draw_xpm(*player2_pixmap, p2_x, p2_y);
+        else draw_xpm_flipped_horizontal(*player2_pixmap, p2_x, p2_y);
+    }
 }
 
 static uint8_t glyph_row(char c, int row) {
