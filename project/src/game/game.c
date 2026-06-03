@@ -94,9 +94,21 @@ static void open_character_select(void) {
     current_state = STATE_CHARACTER_SELECT;
 }
 
+static int first_available_character(int unavailable_character) {
+    for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
+        if (i != unavailable_character) {
+            return i;
+        }
+    }
+
+    return 0;
+}
+
 static void start_match_from_selection(void) {
     if (selected_player1 < 0) selected_player1 = 0;
-    if (selected_player2 < 0) selected_player2 = 1;
+    if (selected_player2 < 0 || selected_player2 == selected_player1) {
+        selected_player2 = first_available_character(selected_player1);
+    }
 
     player1_pixmap = &player_pixmaps[selected_player1];
     player2_pixmap = &player_pixmaps[selected_player2];
@@ -222,8 +234,9 @@ int game_update(void) {
             if (character >= 0) {
                 if (!choosing_player2) {
                     selected_player1 = character;
+                    selected_player2 = -1;
                     choosing_player2 = true;
-                } else {
+                } else if (character != selected_player1) {
                     selected_player2 = character;
                     start_match_from_selection();
                 }
