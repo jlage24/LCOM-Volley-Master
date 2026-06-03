@@ -4,6 +4,7 @@
 
 #include "../devices/keyboard.h"
 #include "../devices/mouse.h"
+#include "../ui/assets.h"
 #include "../ui/game_render.h"
 #include "../ui/menu.h"
 
@@ -30,6 +31,9 @@ static int cursor_y = V_RES / 2;
 static bool mouse_button_was_down = false;
 static bool should_exit = false;
 static bool sudden_death = false;
+static int selected_player1 = -1;
+static int selected_player2 = -1;
+static bool choosing_player2 = false;
 
 static bool point_inside_rect(int px, int py, int x, int y, int w, int h) {
     return px >= x && px < x + w && py >= y && py < y + h;
@@ -55,6 +59,46 @@ static void reset_round(int ball_direction) {
 
     player_init(&g_player1, 220.0f);
     player_init(&g_player2, 800.0f);
+}
+
+static void reset_match(void) {
+    score_p1 = 0;
+    score_p2 = 0;
+    game_seconds_left = GAME_TIME_SECONDS;
+    sudden_death_seconds = 0;
+    timer_frame_count = 0;
+    sudden_death = false;
+    reset_round(1);
+}
+
+static int character_at_point(int x, int y) {
+    for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
+        int card_x = CHARACTER_CARD_X + i * (CHARACTER_CARD_W + CHARACTER_CARD_GAP);
+
+        if (point_inside_rect(x, y, card_x, CHARACTER_CARD_Y,
+                              CHARACTER_CARD_W, CHARACTER_CARD_H)) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static void open_character_select(void) {
+    selected_player1 = -1;
+    selected_player2 = -1;
+    choosing_player2 = false;
+    current_state = STATE_CHARACTER_SELECT;
+}
+
+static void start_match_from_selection(void) {
+    if (selected_player1 < 0) selected_player1 = 0;
+    if (selected_player2 < 0) selected_player2 = 1;
+
+    player1_pixmap = &player_pixmaps[selected_player1];
+    player2_pixmap = &player_pixmaps[selected_player2];
+    reset_match();
+    current_state = STATE_PLAYING;
 }
 
 static void check_win_after_point(void) {
@@ -116,6 +160,11 @@ void game_init(void) {
     mouse_button_was_down = false;
     should_exit = false;
     sudden_death = false;
+    selected_player1 = -1;
+    selected_player2 = -1;
+    choosing_player2 = false;
+    player1_pixmap = &player_pixmaps[0];
+    player2_pixmap = &player_pixmaps[1];
 
     ball_init(&g_ball, 1);
 
@@ -131,7 +180,7 @@ int game_update(void) {
 
     if (current_state == STATE_MENU) {
         if (kb->enter) {
-            current_state = STATE_PLAYING;
+            open_character_select();
         }
 
         if (kb->pause) {
@@ -149,7 +198,32 @@ int game_update(void) {
             else if (point_inside_rect(cursor_x, cursor_y,
                                        MENU_BUTTON_X, MENU_START_Y,
                                        MENU_BUTTON_W, MENU_BUTTON_H)) {
-                current_state = STATE_PLAYING;
+                open_character_select();
+            }
+        }
+    }
+
+    else if (current_state == STATE_CHARACTER_SELECT) {
+        if (kb->enter) {
+            start_match_from_selection();
+        }
+
+        if (kb->pause) {
+            current_state = STATE_MENU;
+            return finish_update(0);
+        }
+
+        if (mouse_clicked) {
+            int character = character_at_point(cursor_x, cursor_y);
+
+            if (character >= 0) {
+                if (!choosing_player2) {
+                    selected_player1 = character;
+                    choosing_player2 = true;
+                } else {
+                    selected_player2 = character;
+                    start_match_from_selection();
+                }
             }
         }
     }
@@ -235,6 +309,11 @@ int game_update(void) {
 void game_render(void) {
     if (current_state == STATE_MENU) {
         draw_main_menu();
+        video_draw_cursor(cursor_x, cursor_y);
+    }
+
+    else if (current_state == STATE_CHARACTER_SELECT) {
+        video_draw_character_select(selected_player1, selected_player2, choosing_player2);
         video_draw_cursor(cursor_x, cursor_y);
     }
 
