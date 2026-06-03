@@ -103,12 +103,16 @@ static uint8_t glyph_row(char c, int row) {
         {7, 5, 7, 1, 7}
     };
     static const uint8_t colon[5] = {0, 2, 0, 2, 0};
+    static const uint8_t plus[5] = {0, 2, 7, 2, 0};
 
     if (c >= '0' && c <= '9') {
         return digits[c - '0'][row];
     }
     if (c == ':') {
         return colon[row];
+    }
+    if (c == '+') {
+        return plus[row];
     }
     return 0;
 }
@@ -153,9 +157,13 @@ void video_draw_hud(int score_left, int score_right, int seconds_left) {
     uint16_t scale = 5;
     uint16_t y = 24;
 
-    if (seconds_left < 0) seconds_left = 0;
-    snprintf(hud, sizeof(hud), "%d   %02d:%02d   %d",
-             score_left, seconds_left / 60, seconds_left % 60, score_right);
+    if (seconds_left < 0) {
+        snprintf(hud, sizeof(hud), "%d   +%d   %d",
+                 score_left, -seconds_left, score_right);
+    } else {
+        snprintf(hud, sizeof(hud), "%d   %02d:%02d   %d",
+                 score_left, seconds_left / 60, seconds_left % 60, score_right);
+    }
 
     uint16_t x = (h_res - text_width(hud, scale)) / 2;
     draw_text(hud, x + 2, y + 2, scale, 0x000000);
@@ -224,3 +232,4 @@ void draw_xpm_flipped_horizontal(xpm_image_t img, uint16_t x, uint16_t y) {
     }
 }
 #pragma clang optimize on
+

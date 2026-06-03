@@ -23,6 +23,7 @@ static Player g_player2;
 static int score_p1 = 0;
 static int score_p2 = 0;
 static int game_seconds_left = GAME_TIME_SECONDS;
+static int sudden_death_seconds = 0;
 static int timer_frame_count = 0;
 static int cursor_x = H_RES / 2;
 static int cursor_y = V_RES / 2;
@@ -65,6 +66,8 @@ static void check_win_after_point(void) {
     if (score_p1 >= WIN_SCORE || score_p2 >= WIN_SCORE) {
         if (score_p1 == score_p2) {
             sudden_death = true;
+            sudden_death_seconds = 0;
+            timer_frame_count = 0;
         } else {
             current_state = STATE_END;
         }
@@ -72,22 +75,28 @@ static void check_win_after_point(void) {
 }
 
 static void update_game_timer(void) {
+    timer_frame_count++;
+
+    if (timer_frame_count < 60) {
+        return;
+    }
+
+    timer_frame_count = 0;
+
     if (sudden_death) {
+        sudden_death_seconds++;
         return;
     }
 
     if (game_seconds_left > 0) {
-        timer_frame_count++;
-
-        if (timer_frame_count >= 60) {
-            timer_frame_count = 0;
-            game_seconds_left--;
-        }
+        game_seconds_left--;
     }
 
     if (game_seconds_left == 0) {
         if (score_p1 == score_p2) {
             sudden_death = true;
+            sudden_death_seconds = 0;
+            timer_frame_count = 0;
         } else {
             current_state = STATE_END;
         }
@@ -100,11 +109,13 @@ void game_init(void) {
     score_p1 = 0;
     score_p2 = 0;
     game_seconds_left = GAME_TIME_SECONDS;
+    sudden_death_seconds = 0;
     timer_frame_count = 0;
     cursor_x = H_RES / 2;
     cursor_y = V_RES / 2;
     mouse_button_was_down = false;
     should_exit = false;
+    sudden_death = false;
 
     ball_init(&g_ball, 1);
 
@@ -149,20 +160,9 @@ int game_update(void) {
             return finish_update(0);
         }
 
-        if (game_seconds_left == 0) {
-            current_state = STATE_END;
-            return finish_update(0);
-        }
+        update_game_timer();
 
-        if (game_seconds_left > 0) {
-            timer_frame_count++;
-            if (timer_frame_count >= 60) {
-                timer_frame_count = 0;
-                game_seconds_left--;
-            }
-        }
-
-        if (game_seconds_left == 0) {
+        if (current_state == STATE_END) {
             return finish_update(0);
         }
 
@@ -186,16 +186,12 @@ int game_update(void) {
         if (point != 0) {
             if (point == 1) {
                 score_p1++;
-                ball_init(&g_ball, -1);
+                reset_round(-1);
             } else if (point == -1) {
                 score_p2++;
-                ball_init(&g_ball, 1);
+                reset_round(1);
             }
-            player_init(&g_player1, 220.0f);
-            player_init(&g_player2, 800.0f);
-        }
-        if (score_p1 >= WIN_SCORE || score_p2 >= WIN_SCORE) {
-            current_state = STATE_END;
+            check_win_after_point();
         }
     }
 
@@ -244,7 +240,7 @@ void game_render(void) {
 
     else if (current_state == STATE_PLAYING) {
         draw_field();
-        video_draw_hud(score_p1, score_p2, game_seconds_left);
+        video_draw_hud(score_p1, score_p2, sudden_death ? -sudden_death_seconds : game_seconds_left);
         video_draw_net();
         video_draw_ball(&g_ball);
         video_draw_players(&g_player1, &g_player2);
@@ -253,7 +249,7 @@ void game_render(void) {
 
     else if (current_state == STATE_PAUSED) {
         draw_field();
-        video_draw_hud(score_p1, score_p2, game_seconds_left);
+        video_draw_hud(score_p1, score_p2, sudden_death ? -sudden_death_seconds : game_seconds_left);
         video_draw_net();
         video_draw_ball(&g_ball);
         video_draw_players(&g_player1, &g_player2);
@@ -272,3 +268,4 @@ void game_render(void) {
 bool game_should_exit(void) {
     return should_exit;
 }
+
