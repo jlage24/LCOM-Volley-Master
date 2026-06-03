@@ -14,10 +14,7 @@
 #include "../images/players/lion.xpm"
 #include "../images/players/bear.xpm"
 #include "../images/players/wolf.xpm"
-<<<<<<< HEAD
 #include "../images/ball.xpm"
-=======
->>>>>>> main
 
 #include <stdlib.h>
 
@@ -79,11 +76,8 @@ int load_all_assets() {
 
     player1_pixmap = &player_pixmaps[0];
     player2_pixmap = &player_pixmaps[1];
-<<<<<<< HEAD
 
     if (load_xpm_asset((xpm_map_t) ball_xpm, &ball_pixmap)) return 1;
-=======
->>>>>>> main
 
     load_field_assets();
 
@@ -106,10 +100,7 @@ void free_all_assets() {
     for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
         free_xpm_asset(&player_pixmaps[i]);
     }
-<<<<<<< HEAD
     free_xpm_asset(&ball_pixmap);
-=======
->>>>>>> main
 
     player1_pixmap = &player_pixmaps[0];
     player2_pixmap = &player_pixmaps[1];
