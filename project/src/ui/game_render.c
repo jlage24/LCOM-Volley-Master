@@ -80,13 +80,17 @@ void video_draw_players(Player *p1, Player *p2) {
     
     uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
     uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
-    if (p1->facing_right) draw_xpm(player1_pixmap, p1_x, p1_y);
-    else draw_xpm_flipped_horizontal(player1_pixmap, p1_x, p1_y);
+    if (player1_pixmap != NULL) {
+        if (p1->facing_right) draw_xpm(*player1_pixmap, p1_x, p1_y);
+        else draw_xpm_flipped_horizontal(*player1_pixmap, p1_x, p1_y);
+    }
     
     uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
     uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
-    if (p2->facing_right) draw_xpm(player2_pixmap, p2_x, p2_y);
-    else draw_xpm_flipped_horizontal(player2_pixmap, p2_x, p2_y);
+    if (player2_pixmap != NULL) {
+        if (p2->facing_right) draw_xpm(*player2_pixmap, p2_x, p2_y);
+        else draw_xpm_flipped_horizontal(*player2_pixmap, p2_x, p2_y);
+    }
 }
 
 static uint8_t glyph_row(char c, int row) {
@@ -226,6 +230,59 @@ static void draw_wide_text(const char *text, uint16_t x, uint16_t y,
             draw_wide_char(text[i], cursor, y, scale, color);
         }
         cursor += (text[i] == ' ') ? (scale * 4) : (scale * 6);
+    }
+}
+
+static void draw_centered_wide_text(const char *text, uint16_t y,
+                                    uint16_t scale, uint32_t color) {
+    uint16_t x = (h_res - wide_text_width(text, scale)) / 2;
+
+    draw_wide_text(text, x + 3, y + 3, scale, 0x000000);
+    draw_wide_text(text, x, y, scale, color);
+}
+
+static void draw_character_card(int index, uint16_t x, uint16_t y,
+                                bool p1_selected, bool p2_selected) {
+    uint32_t border = 0x283542;
+    uint32_t name_color = 0xFFFFFF;
+
+    if (p1_selected) {
+        border = 0xE53A2C;
+        name_color = 0xFF3A2E;
+    } else if (p2_selected) {
+        border = 0xF2B51F;
+        name_color = 0xF2B51F;
+    }
+
+    draw_rectangle_bb(x, y, CHARACTER_CARD_W, CHARACTER_CARD_H, 0x08111C);
+    draw_rectangle_bb(x, y, CHARACTER_CARD_W, 6, border);
+    draw_rectangle_bb(x, y + CHARACTER_CARD_H - 6, CHARACTER_CARD_W, 6, border);
+    draw_rectangle_bb(x, y, 6, CHARACTER_CARD_H, border);
+    draw_rectangle_bb(x + CHARACTER_CARD_W - 6, y, 6, CHARACTER_CARD_H, border);
+    draw_rectangle_bb(x + 6, y + 6, CHARACTER_CARD_W - 12, CHARACTER_CARD_H - 12, 0x263443);
+
+    draw_xpm(player_pixmaps[index], x + 6, y + 10);
+
+    draw_rectangle_bb(x + 6, y + 190, CHARACTER_CARD_W - 12, 28, 0x070B12);
+    draw_wide_text(player_names[index], x + 12, y + 196, 3, name_color);
+}
+
+void video_draw_character_select(int selected_p1, int selected_p2, bool choosing_p2) {
+    draw_xpm(menu_pixmap, 0, 0);
+    draw_rectangle_bb(0, 0, h_res, 92, 0x111A28);
+    draw_rectangle_bb(0, 92, h_res, 8, 0xE53A2C);
+    draw_rectangle_bb(42, 238, 940, 300, 0x07101C);
+    draw_rectangle_bb(42, 238, 940, 6, 0x263443);
+    draw_rectangle_bb(42, 532, 940, 6, 0x263443);
+
+    draw_centered_wide_text("SELECT A CHARACTER", 28, 6, 0xFFFFFF);
+    draw_centered_wide_text(choosing_p2 ? "PLAYER TWO" : "PLAYER ONE", 124, 5,
+                            choosing_p2 ? 0xF2B51F : 0xFF3A2E);
+
+    for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
+        uint16_t x = CHARACTER_CARD_X + i * (CHARACTER_CARD_W + CHARACTER_CARD_GAP);
+        draw_character_card(i, x, CHARACTER_CARD_Y,
+                            selected_p1 == i, selected_p2 == i);
     }
 }
 
