@@ -18,6 +18,7 @@ extern xpm_image_t btn_resume_pixmap;
 extern xpm_image_t btn_menu_pixmap;
 extern xpm_image_t player1_pixmap;
 extern xpm_image_t player2_pixmap;
+extern xpm_image_t ball_pixmap;
 
 int load_all_assets();
 void free_all_assets();

@@ -8,6 +8,7 @@
 #include "../images/btn_menu.xpm"
 #include "../images/players/eagle.xpm"
 #include "../images/players/panda.xpm"
+#include "../images/ball.xpm"
 
 #include <stdlib.h>
 
@@ -25,6 +26,7 @@ xpm_image_t btn_resume_pixmap;
 xpm_image_t btn_menu_pixmap;
 xpm_image_t player1_pixmap;
 xpm_image_t player2_pixmap;
+xpm_image_t ball_pixmap;
 
 static int load_xpm_asset(xpm_map_t xpm, xpm_image_t *img) {
     return xpm_load(xpm, XPM_8_8_8_8, img) == NULL;
@@ -48,6 +50,7 @@ int load_all_assets() {
     if (load_xpm_asset((xpm_map_t) btn_menu, &btn_menu_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) eagle_xpm, &player1_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) panda_xpm, &player2_pixmap)) return 1;
+    if (load_xpm_asset((xpm_map_t) ball_xpm, &ball_pixmap)) return 1;
 
     load_field_assets();
 
@@ -67,5 +70,6 @@ void free_all_assets() {
     free_xpm_asset(&btn_menu_pixmap);
     free_xpm_asset(&player1_pixmap);
     free_xpm_asset(&player2_pixmap);
+    free_xpm_asset(&ball_pixmap);
 }
 

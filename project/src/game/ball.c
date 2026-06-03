@@ -1,6 +1,6 @@
 #include "ball.h"
 
-#define BALL_RADIUS 16
+#define BALL_RADIUS 20
 #define BALL_BOUNCE 0.85f
 #define BALL_START_SPEED_X 5.0f
 #define BALL_START_SPEED_Y -8.0f
@@ -40,29 +40,48 @@ int ball_update(Ball *b) {
         b->vy = -b->vy * BALL_BOUNCE;
     }
 
-    // 5. Net collision
+    // 5. Net collision (Circle vs AABB)
     int net_width = 12;
     float net_top = FLOOR_Y - NET_HEIGHT;
     float net_bottom = FLOOR_Y;
     float net_left = NET_X - net_width / 2.0f;
     float net_right = NET_X + net_width / 2.0f;
 
-    float b_left = b->x - BALL_RADIUS;
-    float b_right = b->x + BALL_RADIUS;
-    float b_top = b->y - BALL_RADIUS;
-    float b_bottom = b->y + BALL_RADIUS;
+    // Find the closest point on the net rectangle to the ball center
+    float closest_x = b->x;
+    float closest_y = b->y;
+    if (closest_x < net_left)   closest_x = net_left;
+    if (closest_x > net_right)  closest_x = net_right;
+    if (closest_y < net_top)    closest_y = net_top;
+    if (closest_y > net_bottom) closest_y = net_bottom;
 
-    if (b_right > net_left && b_left < net_right &&
-        b_bottom > net_top && b_top < net_bottom) {
-        
-        // Push ball outside the net
-        if (b->x < NET_X) {
-            b->x = net_left - BALL_RADIUS;
-        } else {
-            b->x = net_right + BALL_RADIUS;
-        }
-        
-        // Reverse horizontal velocity and apply BALL_BOUNCE
+    float dx = b->x - closest_x;
+    float dy = b->y - closest_y;
+    float dist_sq = dx * dx + dy * dy;
+    float radius_sq = (float)BALL_RADIUS * BALL_RADIUS;
+
+    if (dist_sq < radius_sq && dist_sq > 0.0f) {
+        // Push ball outside the net along the penetration vector
+        // Use inverse sqrt approximation: scale by radius/dist
+        // dist = sqrt(dist_sq), penetration = radius - dist
+        // We can compute this without sqrt by using: push = (radius/dist - 1) * delta
+        // But we need dist for the push magnitude, so compute it:
+        // Fast inverse sqrt (Newton's method, 1 iteration)
+        float x2 = dist_sq * 0.5f;
+        int i = *(int*)&dist_sq;
+        i = 0x5f3759df - (i >> 1);
+        float inv_dist = *(float*)&i;
+        inv_dist = inv_dist * (1.5f - x2 * inv_dist * inv_dist);
+        float dist = 1.0f / inv_dist;
+
+        float overlap = BALL_RADIUS - dist;
+        float nx = dx * inv_dist;
+        float ny = dy * inv_dist;
+
+        b->x += nx * overlap;
+        b->y += ny * overlap;
+
+        // Reverse horizontal velocity and apply bounce
         b->vx = -b->vx * BALL_BOUNCE;
     }
 
@@ -85,14 +104,53 @@ void ball_collide_with_player(Ball *b, const Player *p, int direction) {
     float p_top = p->y - PLAYER_HEIGHT / 2.0f;
     float p_bottom = p->y + PLAYER_HEIGHT / 2.0f;
 
-    float b_left = b->x - BALL_RADIUS;
-    float b_right = b->x + BALL_RADIUS;
-    float b_top = b->y - BALL_RADIUS;
-    float b_bottom = b->y + BALL_RADIUS;
+    // Find the closest point on the player rectangle to the ball center
+    float closest_x = b->x;
+    float closest_y = b->y;
+    if (closest_x < p_left)   closest_x = p_left;
+    if (closest_x > p_right)  closest_x = p_right;
+    if (closest_y < p_top)    closest_y = p_top;
+    if (closest_y > p_bottom) closest_y = p_bottom;
 
-    if (b_right > p_left && b_left < p_right &&
-        b_bottom > p_top && b_top < p_bottom) {
-        
+    float dx = b->x - closest_x;
+    float dy = b->y - closest_y;
+    float dist_sq = dx * dx + dy * dy;
+    float radius_sq = (float)BALL_RADIUS * BALL_RADIUS;
+
+    if (dist_sq < radius_sq) {
+        // Push ball outside player along penetration vector
+        if (dist_sq > 0.0f) {
+            // Ball center is outside the rectangle — use the collision normal
+            float x2 = dist_sq * 0.5f;
+            int i = *(int*)&dist_sq;
+            i = 0x5f3759df - (i >> 1);
+            float inv_dist = *(float*)&i;
+            inv_dist = inv_dist * (1.5f - x2 * inv_dist * inv_dist);
+            float dist = 1.0f / inv_dist;
+
+            float overlap = BALL_RADIUS - dist;
+            b->x += dx * inv_dist * overlap;
+            b->y += dy * inv_dist * overlap;
+        } else {
+            // Ball center is inside the rectangle — fallback to axis-aligned push-out
+            float overlap_left = b->x - p_left + BALL_RADIUS;
+            float overlap_right = p_right - b->x + BALL_RADIUS;
+            float overlap_top = b->y - p_top + BALL_RADIUS;
+            float overlap_bottom = p_bottom - b->y + BALL_RADIUS;
+
+            float min_overlap = overlap_left;
+            int side = 0; // 0=left, 1=right, 2=top, 3=bottom
+
+            if (overlap_right < min_overlap) { min_overlap = overlap_right; side = 1; }
+            if (overlap_top < min_overlap) { min_overlap = overlap_top; side = 2; }
+            if (overlap_bottom < min_overlap) { min_overlap = overlap_bottom; side = 3; }
+
+            if (side == 0) b->x = p_left - BALL_RADIUS;
+            else if (side == 1) b->x = p_right + BALL_RADIUS;
+            else if (side == 2) b->y = p_top - BALL_RADIUS;
+            else if (side == 3) b->y = p_bottom + BALL_RADIUS;
+        }
+
         // Determine rebound direction from relative position
         // Positive offset = ball is to the right of the player center
         // Negative offset = ball is to the left
@@ -104,25 +162,6 @@ void ball_collide_with_player(Ball *b, const Player *p, int direction) {
         if (norm > 1.0f)  norm = 1.0f;
         if (norm < -1.0f) norm = -1.0f;
 
-        // Place ball just outside player based on where the ball actually is
-        // Use the relative position (not the forced direction) to pick the exit side
-        float overlap_left = b_right - p_left;
-        float overlap_right = p_right - b_left;
-        float overlap_top = b_bottom - p_top;
-        float overlap_bottom = p_bottom - b_top;
-
-        float min_overlap = overlap_left;
-        int side = 0; // 0=left, 1=right, 2=top, 3=bottom
-
-        if (overlap_right < min_overlap) { min_overlap = overlap_right; side = 1; }
-        if (overlap_top < min_overlap) { min_overlap = overlap_top; side = 2; }
-        if (overlap_bottom < min_overlap) { min_overlap = overlap_bottom; side = 3; }
-
-        if (side == 0) b->x = p_left - BALL_RADIUS;
-        else if (side == 1) b->x = p_right + BALL_RADIUS;
-        else if (side == 2) b->y = p_top - BALL_RADIUS;
-        else if (side == 3) b->y = p_bottom + BALL_RADIUS;
-        
         // Directional horizontal impulse based on where the ball hit
         // Base speed range: 2 (center hit) to 8 (edge hit)
         float base_speed = 2.0f + 6.0f * (norm < 0 ? -norm : norm);

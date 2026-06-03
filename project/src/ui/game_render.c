@@ -66,12 +66,10 @@ void video_draw_net() {
 }
 
 void video_draw_ball(Ball *b) {
-    uint16_t radius = 16;
-    uint16_t draw_x = (uint16_t)(b->x) - radius;
-    uint16_t draw_y = (uint16_t)(b->y) - radius;
-    uint16_t width = radius * 2;
+    uint16_t draw_x = (uint16_t)(b->x) - ball_pixmap.width / 2;
+    uint16_t draw_y = (uint16_t)(b->y) - ball_pixmap.height / 2;
     
-    draw_rectangle_bb(draw_x, draw_y, width, width, 0x00FF00); // Light green ball
+    draw_xpm(ball_pixmap, draw_x, draw_y);
 }
 
 void video_draw_players(Player *p1, Player *p2) {
