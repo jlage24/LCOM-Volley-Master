@@ -263,9 +263,9 @@ static void draw_centered_wide_text(const char *text, uint16_t y,
 }
 
 static void draw_leaf_block(int x, int y, uint32_t color) {
-    draw_rectangle_bb((uint16_t)x, (uint16_t)(y + 3), 14, 8, 0x173C16);
-    draw_rectangle_bb((uint16_t)(x + 3), (uint16_t)y, 8, 14, color);
-    draw_rectangle_bb((uint16_t)(x + 5), (uint16_t)(y + 2), 4, 10, 0x8EAE3D);
+    draw_rectangle_bb((uint16_t)x, (uint16_t)(y + 3), 10, 5, 0x173C16);
+    draw_rectangle_bb((uint16_t)(x + 2), (uint16_t)(y + 1), 6, 10, color);
+    draw_rectangle_bb((uint16_t)(x + 4), (uint16_t)(y + 2), 2, 7, 0x8EAE3D);
 }
 
 static void draw_vine_between(int x0, int y0, int x1, int y1) {
@@ -275,54 +275,59 @@ static void draw_vine_between(int x0, int y0, int x1, int y1) {
         int x = x0 + ((x1 - x0) * i) / steps;
         int y = y0 + ((y1 - y0) * i) / steps;
 
-        draw_rectangle_bb((uint16_t)(x - 3), (uint16_t)(y - 3), 8, 8, 0x173C16);
-        draw_rectangle_bb((uint16_t)(x - 1), (uint16_t)(y - 1), 4, 4, 0x2D6D25);
+        draw_rectangle_bb((uint16_t)(x - 2), (uint16_t)(y - 2), 5, 5, 0x173C16);
+        draw_rectangle_bb((uint16_t)(x - 1), (uint16_t)(y - 1), 3, 3, 0x2D6D25);
 
         if (i % 7 == 3) {
-            draw_leaf_block(x - 14, y - 6, 0x3E8A31);
+            draw_leaf_block(x - 10, y - 5, 0x3E8A31);
         } else if (i % 7 == 6) {
-            draw_leaf_block(x + 3, y - 5, 0x2F7628);
+            draw_leaf_block(x + 3, y - 4, 0x2F7628);
         }
     }
 }
 
 static void draw_leaf_lock(int x, int y) {
-    draw_rectangle_bb((uint16_t)(x + 18), (uint16_t)y, 36, 8, 0x102510);
-    draw_rectangle_bb((uint16_t)(x + 10), (uint16_t)(y + 8), 8, 30, 0x102510);
-    draw_rectangle_bb((uint16_t)(x + 54), (uint16_t)(y + 8), 8, 30, 0x102510);
-    draw_rectangle_bb((uint16_t)(x + 18), (uint16_t)(y + 8), 36, 8, 0x4E8A2E);
-    draw_rectangle_bb((uint16_t)(x + 18), (uint16_t)(y + 16), 8, 22, 0x4E8A2E);
-    draw_rectangle_bb((uint16_t)(x + 46), (uint16_t)(y + 16), 8, 22, 0x4E8A2E);
+    draw_rectangle_bb((uint16_t)(x + 13), (uint16_t)y, 26, 6, 0x102510);
+    draw_rectangle_bb((uint16_t)(x + 7), (uint16_t)(y + 6), 6, 22, 0x102510);
+    draw_rectangle_bb((uint16_t)(x + 39), (uint16_t)(y + 6), 6, 22, 0x102510);
+    draw_rectangle_bb((uint16_t)(x + 13), (uint16_t)(y + 6), 26, 6, 0x4E8A2E);
+    draw_rectangle_bb((uint16_t)(x + 13), (uint16_t)(y + 12), 6, 16, 0x4E8A2E);
+    draw_rectangle_bb((uint16_t)(x + 33), (uint16_t)(y + 12), 6, 16, 0x4E8A2E);
 
-    draw_rectangle_bb((uint16_t)(x + 2), (uint16_t)(y + 36), 68, 56, 0x0B1A0B);
-    draw_rectangle_bb((uint16_t)(x + 8), (uint16_t)(y + 42), 56, 44, 0x2F6D23);
-    draw_rectangle_bb((uint16_t)(x + 14), (uint16_t)(y + 48), 44, 32, 0x3E8A31);
-    draw_leaf_block(x + 6, y + 42, 0x4E9A36);
-    draw_leaf_block(x + 50, y + 42, 0x3E8A31);
-    draw_leaf_block(x + 12, y + 72, 0x3B7E2C);
-    draw_leaf_block(x + 44, y + 72, 0x4E9A36);
+    draw_rectangle_bb((uint16_t)(x + 2), (uint16_t)(y + 26), 48, 38, 0x0B1A0B);
+    draw_rectangle_bb((uint16_t)(x + 7), (uint16_t)(y + 31), 38, 28, 0x2F6D23);
+    draw_rectangle_bb((uint16_t)(x + 12), (uint16_t)(y + 36), 28, 18, 0x3E8A31);
+    draw_leaf_block(x + 4, y + 30, 0x4E9A36);
+    draw_leaf_block(x + 38, y + 30, 0x3E8A31);
+    draw_leaf_block(x + 10, y + 50, 0x3B7E2C);
+    draw_leaf_block(x + 32, y + 50, 0x4E9A36);
 
-    draw_rectangle_bb((uint16_t)(x + 30), (uint16_t)(y + 60), 14, 12, 0x071007);
-    draw_rectangle_bb((uint16_t)(x + 33), (uint16_t)(y + 70), 8, 12, 0x071007);
+    draw_rectangle_bb((uint16_t)(x + 21), (uint16_t)(y + 43), 10, 8, 0x071007);
+    draw_rectangle_bb((uint16_t)(x + 23), (uint16_t)(y + 50), 6, 8, 0x071007);
 }
 
 static void draw_locked_character_overlay(uint16_t x, uint16_t y) {
-    int center_x = x + CHARACTER_CARD_W / 2;
-    int center_y = y + 100;
+    int portrait_x = x + 12;
+    int portrait_y = y + 18;
+    int portrait_w = CHARACTER_CARD_W - 24;
+    int portrait_h = 144;
+    int center_x = portrait_x + portrait_w / 2;
+    int center_y = portrait_y + portrait_h / 2;
 
-    blend_rectangle_bb(x + 8, y + 12, CHARACTER_CARD_W - 16, CHARACTER_CARD_H - 56, 35);
-    draw_vine_between(x + 8, y + 18, center_x, center_y);
-    draw_vine_between(x + CHARACTER_CARD_W - 8, y + 18, center_x, center_y);
-    draw_vine_between(x + 8, y + CHARACTER_CARD_H - 60, center_x, center_y);
-    draw_vine_between(x + CHARACTER_CARD_W - 8, y + CHARACTER_CARD_H - 60, center_x, center_y);
-    draw_leaf_lock(center_x - 36, center_y - 36);
+    blend_rectangle_bb((uint16_t)portrait_x, (uint16_t)portrait_y,
+                       (uint16_t)portrait_w, (uint16_t)portrait_h, 42);
+    draw_vine_between(portrait_x + 4, portrait_y + 6, center_x, center_y);
+    draw_vine_between(portrait_x + portrait_w - 4, portrait_y + 6, center_x, center_y);
+    draw_vine_between(portrait_x + 4, portrait_y + portrait_h - 6, center_x, center_y);
+    draw_vine_between(portrait_x + portrait_w - 4, portrait_y + portrait_h - 6, center_x, center_y);
+    draw_leaf_lock(center_x - 26, center_y - 28);
 }
 
 static void draw_character_selection_marker(uint16_t x, uint16_t y, uint32_t color) {
-    draw_rectangle_bb(x, y, CHARACTER_CARD_W, 6, color);
-    draw_rectangle_bb(x, y + CHARACTER_CARD_H - 6, CHARACTER_CARD_W, 6, color);
-    draw_rectangle_bb(x, y, 6, CHARACTER_CARD_H, color);
-    draw_rectangle_bb(x + CHARACTER_CARD_W - 6, y, 6, CHARACTER_CARD_H, color);
+    draw_rectangle_bb(x, y, CHARACTER_CARD_W, 3, color);
+    draw_rectangle_bb(x, y + CHARACTER_CARD_H - 3, CHARACTER_CARD_W, 3, color);
+    draw_rectangle_bb(x, y, 3, CHARACTER_CARD_H, color);
+    draw_rectangle_bb(x + CHARACTER_CARD_W - 3, y, 3, CHARACTER_CARD_H, color);
 }
 
 void video_draw_character_select(int selected_p1, int selected_p2, bool choosing_p2) {
@@ -337,10 +342,9 @@ void video_draw_character_select(int selected_p1, int selected_p2, bool choosing
         uint16_t x = CHARACTER_CARD_X + i * (CHARACTER_CARD_W + CHARACTER_CARD_GAP);
 
         if (selected_p1 == i) {
-            draw_character_selection_marker(x, CHARACTER_CARD_Y, 0x5DAA3C);
             draw_locked_character_overlay(x, CHARACTER_CARD_Y);
         } else if (selected_p2 == i) {
-            draw_character_selection_marker(x, CHARACTER_CARD_Y, 0xF2B51F);
+            draw_character_selection_marker(x, CHARACTER_CARD_Y, 0xD58C2A);
         }
     }
 }
