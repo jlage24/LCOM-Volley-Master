@@ -158,8 +158,9 @@ void video_draw_hud(int score_left, int score_right, int seconds_left) {
     uint16_t y = 24;
 
     if (seconds_left < 0) {
-        snprintf(hud, sizeof(hud), "%d   +%d   %d",
-                 score_left, -seconds_left, score_right);
+        int overtime_seconds = -seconds_left;
+        snprintf(hud, sizeof(hud), "%d   +%02d:%02d   %d",
+                 score_left, overtime_seconds / 60, overtime_seconds % 60, score_right);
     } else {
         snprintf(hud, sizeof(hud), "%d   %02d:%02d   %d",
                  score_left, seconds_left / 60, seconds_left % 60, score_right);
@@ -232,4 +233,3 @@ void draw_xpm_flipped_horizontal(xpm_image_t img, uint16_t x, uint16_t y) {
     }
 }
 #pragma clang optimize on
-
