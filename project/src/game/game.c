@@ -34,6 +34,9 @@ static bool sudden_death = false;
 static int selected_player1 = -1;
 static int selected_player2 = -1;
 static bool choosing_player2 = false;
+static const int character_card_x[PLAYER_CHARACTER_COUNT] = {
+    112, 247, 381, 514, 647, 780
+};
 
 static bool point_inside_rect(int px, int py, int x, int y, int w, int h) {
     return px >= x && px < x + w && py >= y && py < y + h;
@@ -73,7 +76,7 @@ static void reset_match(void) {
 
 static int character_at_point(int x, int y) {
     for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
-        int card_x = CHARACTER_CARD_X + i * (CHARACTER_CARD_W + CHARACTER_CARD_GAP);
+        int card_x = character_card_x[i];
 
         if (point_inside_rect(x, y, card_x, CHARACTER_CARD_Y,
                               CHARACTER_CARD_W, CHARACTER_CARD_H)) {
