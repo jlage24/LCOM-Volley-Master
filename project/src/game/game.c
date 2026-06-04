@@ -13,9 +13,13 @@
 #define MENU_EXIT_Y 460
 #define MENU_BUTTON_W 300
 #define MENU_BUTTON_H 130
+#define FIELD_CARD_Y 388
+#define FIELD_CARD_W 190
+#define FIELD_CARD_H 205
 
 /* Global game state */
 GameState current_state = STATE_MENU;
+t_field_type selected_field = FIELD_JUNGLE;
 
 /* Internal game objects */
 static Ball g_ball;
@@ -36,6 +40,9 @@ static int selected_player2 = -1;
 static bool choosing_player2 = false;
 static const int character_card_x[PLAYER_CHARACTER_COUNT] = {
     112, 247, 381, 514, 647, 780
+};
+static const int field_card_x[FIELD_COUNT] = {
+    126, 323, 521, 720
 };
 
 static bool point_inside_rect(int px, int py, int x, int y, int w, int h) {
@@ -87,9 +94,21 @@ static int character_at_point(int x, int y) {
     return -1;
 }
 
+static t_field_type field_at_point(int x, int y) {
+    for (int i = 0; i < FIELD_COUNT; i++) {
+        if (point_inside_rect(x, y, field_card_x[i], FIELD_CARD_Y,
+                              FIELD_CARD_W, FIELD_CARD_H)) {
+            return (t_field_type)i;
+        }
+    }
+
+    return FIELD_COUNT;
+}
+
 static void open_character_select(void) {
     selected_player1 = -1;
     selected_player2 = -1;
+    selected_field = FIELD_JUNGLE;
     choosing_player2 = false;
     current_state = STATE_CHARACTER_SELECT;
 }
@@ -112,6 +131,10 @@ static void start_match_from_selection(void) {
 
     player1_pixmap = &player_pixmaps[selected_player1];
     player2_pixmap = &player_pixmaps[selected_player2];
+    current_state = STATE_FIELD_SELECT;
+}
+
+static void start_match_from_field_selection(void) {
     reset_match();
     current_state = STATE_PLAYING;
 }
@@ -177,6 +200,7 @@ void game_init(void) {
     sudden_death = false;
     selected_player1 = -1;
     selected_player2 = -1;
+    selected_field = FIELD_JUNGLE;
     choosing_player2 = false;
     player1_pixmap = &player_pixmaps[0];
     player2_pixmap = &player_pixmaps[1];
@@ -240,6 +264,22 @@ int game_update(void) {
                     selected_player2 = character;
                     start_match_from_selection();
                 }
+            }
+        }
+    }
+
+    else if (current_state == STATE_FIELD_SELECT) {
+        if (kb->pause) {
+            current_state = STATE_CHARACTER_SELECT;
+            return finish_update(0);
+        }
+
+        if (mouse_clicked) {
+            t_field_type field = field_at_point(cursor_x, cursor_y);
+
+            if (field < FIELD_COUNT) {
+                selected_field = field;
+                start_match_from_field_selection();
             }
         }
     }
@@ -333,8 +373,13 @@ void game_render(void) {
         video_draw_cursor(cursor_x, cursor_y);
     }
 
+    else if (current_state == STATE_FIELD_SELECT) {
+        draw_field_select_menu();
+        video_draw_cursor(cursor_x, cursor_y);
+    }
+
     else if (current_state == STATE_PLAYING) {
-        draw_field();
+        draw_field(selected_field);
         video_draw_hud(score_p1, score_p2, sudden_death ? -sudden_death_seconds : game_seconds_left);
         video_draw_net();
         video_draw_ball(&g_ball);
@@ -346,7 +391,7 @@ void game_render(void) {
     }
 
     else if (current_state == STATE_PAUSED) {
-        draw_field();
+        draw_field(selected_field);
         video_draw_hud(score_p1, score_p2, sudden_death ? -sudden_death_seconds : game_seconds_left);
         video_draw_net();
         video_draw_ball(&g_ball);

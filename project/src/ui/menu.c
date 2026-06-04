@@ -29,10 +29,27 @@ void draw_pause_menu() {
     draw_xpm(btn_menu_pixmap, pos_x, pos_y_exit);
 }
 
-void draw_field() {
-    draw_xpm(jungle_volley_pixmap, 0, 0);
+void draw_field_select_menu() {
+    draw_xpm(field_select_pixmap, 0, 0);
 }
 
+void draw_field(t_field_type field) {
+    switch (field) {
+        case FIELD_BEACH:
+            draw_xpm(beach_volley_pixmap, 0, 0);
+            break;
+        case FIELD_DESERT:
+            draw_xpm(desert_volley_pixmap, 0, 0);
+            break;
+        case FIELD_ICE:
+            draw_xpm(ice_volley_pixmap, 0, 0);
+            break;
+        case FIELD_JUNGLE:
+        default:
+            draw_xpm(jungle_volley_pixmap, 0, 0);
+            break;
+    }
+}
 
 
 
