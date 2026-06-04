@@ -10,6 +10,7 @@ extern xpm_image_t bg_pixmap;
 extern xpm_image_t menu_pixmap;
 extern xpm_image_t menu_pause_pixmap;
 extern xpm_image_t character_select_pixmap;
+extern xpm_image_t field_select_pixmap;
 extern xpm_image_t locked_character_pixmap;
 extern xpm_image_t beach_volley_pixmap;
 extern xpm_image_t desert_volley_pixmap;

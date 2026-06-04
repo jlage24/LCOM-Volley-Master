@@ -21,12 +21,23 @@
 typedef enum {
     STATE_MENU,
     STATE_CHARACTER_SELECT,
+    STATE_FIELD_SELECT,
     STATE_PLAYING,
     STATE_PAUSED,
     STATE_END
 } GameState;
 
 extern GameState current_state;
+
+typedef enum e_field_type {
+    FIELD_BEACH,
+    FIELD_DESERT,
+    FIELD_ICE,
+    FIELD_JUNGLE,
+    FIELD_COUNT
+} t_field_type;
+
+extern t_field_type selected_field;
 
 typedef struct {
     float x;
