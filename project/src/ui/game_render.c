@@ -57,11 +57,12 @@ void draw_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 }
 
 void video_draw_net() {
+    /* Net hitbox hidden — uncomment to debug:
     uint16_t net_width = 10;
-    uint16_t start_x = 512 - (net_width / 2); 
-    uint16_t start_y = 680 - 160;             
-    
-    draw_rectangle_bb(start_x, start_y, net_width, 160, 0xFFFFFF); // White net
+    uint16_t start_x = NET_X - (net_width / 2); 
+    uint16_t start_y = FLOOR_Y - NET_HEIGHT;             
+    draw_rectangle_bb(start_x, start_y, net_width, NET_HEIGHT, 0xFFFFFF);
+    */
 }
 
 void video_draw_ball(Ball *b) {

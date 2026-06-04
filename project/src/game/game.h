@@ -8,8 +8,7 @@
 #define V_RES       768
 #define FLOOR_Y     680
 #define NET_X       512
-#define NET_HEIGHT  160
-#define WIN_SCORE   5
+#define NET_HEIGHT  300
 #define GAME_TIME_SECONDS 60
 #define GRAVITY     0.2f
 

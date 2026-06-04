@@ -109,3 +109,4 @@ void free_all_assets() {
     player1_pixmap = &player_pixmaps[0];
     player2_pixmap = &player_pixmaps[1];
 }
+

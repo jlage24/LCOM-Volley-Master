@@ -40,8 +40,8 @@ int ball_update(Ball *b) {
         b->vy = -b->vy * BALL_BOUNCE;
     }
 
-    // 5. Net collision (Circle vs AABB)
-    int net_width = 12;
+    // 5. Net collision (Circle vs AABB with top/side differentiation)
+    int net_width = 10;
     float net_top = FLOOR_Y - NET_HEIGHT;
     float net_bottom = FLOOR_Y;
     float net_left = NET_X - net_width / 2.0f;
@@ -61,28 +61,37 @@ int ball_update(Ball *b) {
     float radius_sq = (float)BALL_RADIUS * BALL_RADIUS;
 
     if (dist_sq < radius_sq && dist_sq > 0.0f) {
-        // Push ball outside the net along the penetration vector
-        // Use inverse sqrt approximation: scale by radius/dist
-        // dist = sqrt(dist_sq), penetration = radius - dist
-        // We can compute this without sqrt by using: push = (radius/dist - 1) * delta
-        // But we need dist for the push magnitude, so compute it:
-        // Fast inverse sqrt (Newton's method, 1 iteration)
-        float x2 = dist_sq * 0.5f;
-        int i = *(int*)&dist_sq;
-        i = 0x5f3759df - (i >> 1);
-        float inv_dist = *(float*)&i;
-        inv_dist = inv_dist * (1.5f - x2 * inv_dist * inv_dist);
-        float dist = 1.0f / inv_dist;
+        // Determine if the ball hit the top or the side of the net.
+        // Top collision: the ball was above the net top edge before impact.
+        bool is_top_collision = (b->y - BALL_RADIUS) <= net_top &&
+                                b->x >= net_left - BALL_RADIUS &&
+                                b->x <= net_right + BALL_RADIUS;
 
-        float overlap = BALL_RADIUS - dist;
-        float nx = dx * inv_dist;
-        float ny = dy * inv_dist;
+        if (is_top_collision) {
+            // Clamp the ball to sit exactly on top of the net
+            b->y = net_top - BALL_RADIUS;
+            // Small upward bounce so the ball doesn't get stuck
+            b->vy = -3.0f;
+            // Dampen forward momentum slightly — ball continues in its direction
+            b->vx *= 0.8f;
+        } else {
+            // Side collision: push ball out and reverse horizontal velocity
+            float x2 = dist_sq * 0.5f;
+            int i = *(int*)&dist_sq;
+            i = 0x5f3759df - (i >> 1);
+            float inv_dist = *(float*)&i;
+            inv_dist = inv_dist * (1.5f - x2 * inv_dist * inv_dist);
 
-        b->x += nx * overlap;
-        b->y += ny * overlap;
+            float overlap = BALL_RADIUS - 1.0f / inv_dist;
+            float nx = dx * inv_dist;
+            float ny = dy * inv_dist;
 
-        // Reverse horizontal velocity and apply bounce
-        b->vx = -b->vx * BALL_BOUNCE;
+            b->x += nx * overlap;
+            b->y += ny * overlap;
+
+            // Reverse horizontal velocity and apply bounce
+            b->vx = -b->vx * BALL_BOUNCE;
+        }
     }
 
     // 6. Scoring detection

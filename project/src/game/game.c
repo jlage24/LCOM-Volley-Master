@@ -144,16 +144,6 @@ static void check_win_after_point(void) {
         current_state = STATE_END;
         return;
     }
-
-    if (score_p1 >= WIN_SCORE || score_p2 >= WIN_SCORE) {
-        if (score_p1 == score_p2) {
-            sudden_death = true;
-            sudden_death_seconds = 0;
-            timer_frame_count = 0;
-        } else {
-            current_state = STATE_END;
-        }
-    }
 }
 
 static void update_game_timer(void) {
