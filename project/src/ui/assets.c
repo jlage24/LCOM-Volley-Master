@@ -2,7 +2,7 @@
 
 #include "../images/menu.xpm"
 #include "../images/menu_pause.xpm"
-#include "../images/selection_screen_jungle_1024x768.xpm"
+#include "../images/menu_players.xpm"
 #include "../images/locked_character.xpm"
 #include "../images/btn_start.xpm"
 #include "../images/btn_exit.xpm"
@@ -59,7 +59,7 @@ static void free_xpm_asset(xpm_image_t *img) {
 int load_all_assets() {
     if (load_xpm_asset((xpm_map_t) menu, &menu_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) menu_pause, &menu_pause_pixmap)) return 1;
-    if (load_xpm_asset((xpm_map_t) selection_screen_jungle_1024x768_xpm, &character_select_pixmap)) return 1;
+    if (load_xpm_asset((xpm_map_t) menu_players, &character_select_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) locked_character_xpm, &locked_character_pixmap)) return 1;
 
     if (load_xpm_asset((xpm_map_t) btn_start, &btn_start_pixmap)) return 1;
