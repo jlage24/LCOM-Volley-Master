@@ -7,23 +7,34 @@ static bool mouse_error = false;
 
 void (mouse_ih)() {
     uint8_t status;
-    mouse_error = false; // reset error flag for each interrupt
-    // Read the status register
-    if (util_sys_inb(KBC_STATUS_REG, &status) != 0) { 
-      mouse_error = true; 
-      return; 
+    mouse_error = false;
+
+    if (util_sys_inb(KBC_STATUS_REG, &status) != 0) {
+        mouse_error = true;
+        return;
     }
-    // Check if OBF is full (data is available)
-    if (status & KBC_OBF) {
-        // Read the Output Buffer
-        if (util_sys_inb(KBC_OUT_BUF, &current_byte) != 0) { 
-          mouse_error = true; 
-          return; 
-        }
-        // Check for parity or timeout errors
-        if ((status & KBC_PARITY_ERR) || (status & KBC_TIMEOUT_ERR)) {
-            mouse_error = true;
-        }
+
+    if (!(status & KBC_OBF)) {
+        mouse_error = true;
+        return;
+    }
+
+    /*
+     * Bit 5 of the KBC status register indicates that the byte
+     * in the output buffer came from the mouse, not the keyboard.
+     */
+    if (!(status & BIT(5))) {
+        mouse_error = true;
+        return;
+    }
+
+    if (util_sys_inb(KBC_OUT_BUF, &current_byte) != 0) {
+        mouse_error = true;
+        return;
+    }
+
+    if ((status & KBC_PARITY_ERR) || (status & KBC_TIMEOUT_ERR)) {
+        mouse_error = true;
     }
 }
 

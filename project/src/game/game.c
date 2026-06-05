@@ -13,6 +13,10 @@
 #define MENU_EXIT_Y 460
 #define MENU_BUTTON_W 300
 #define MENU_BUTTON_H 130
+#define MENU_BUTTON_SELECT_X_OFFSET 13
+#define MENU_BUTTON_SELECT_Y_OFFSET 38
+#define MENU_BUTTON_SELECT_W 274
+#define MENU_BUTTON_SELECT_H 53
 #define FIELD_CARD_Y 388
 #define FIELD_CARD_W 190
 #define FIELD_CARD_H 205
@@ -42,6 +46,11 @@ static bool sudden_death = false;
 static int selected_player1 = -1;
 static int selected_player2 = -1;
 static bool choosing_player2 = false;
+static int main_menu_selected = 0;
+static int pause_menu_selected = 0;
+static int character_selected_index = 0;
+static int field_selected_index = FIELD_JUNGLE;
+static int end_menu_selected = 0;
 static const int character_card_x[PLAYER_CHARACTER_COUNT] = {
     112, 247, 381, 514, 647, 780
 };
@@ -111,10 +120,101 @@ static t_field_type field_at_point(int x, int y) {
     return FIELD_COUNT;
 }
 
+static int first_available_character(int unavailable_character);
+static void start_match_from_selection(void);
+static void start_match_from_field_selection(void);
+
+static void move_vertical_selection(int *selected, int count, const KeyboardState *kb) {
+    if (kb->up) {
+        *selected = (*selected + count - 1) % count;
+    }
+    if (kb->down) {
+        *selected = (*selected + 1) % count;
+    }
+}
+
+static void move_horizontal_selection(int *selected, int count, const KeyboardState *kb) {
+    if (kb->left) {
+        *selected = (*selected + count - 1) % count;
+    }
+    if (kb->right) {
+        *selected = (*selected + 1) % count;
+    }
+}
+
+static void move_character_selection(const KeyboardState *kb) {
+    int direction = 0;
+
+    if (kb->left) direction--;
+    if (kb->right) direction++;
+
+    if (direction == 0) {
+        return;
+    }
+
+    do {
+        character_selected_index =
+            (character_selected_index + PLAYER_CHARACTER_COUNT + direction) %
+            PLAYER_CHARACTER_COUNT;
+    } while (choosing_player2 && character_selected_index == selected_player1);
+}
+
+static int button_at_point(int x, int y) {
+    if (point_inside_rect(x, y,
+                          MENU_BUTTON_X, MENU_EXIT_Y,
+                          MENU_BUTTON_W, MENU_BUTTON_H)) {
+        return 1;
+    }
+    if (point_inside_rect(x, y,
+                          MENU_BUTTON_X, MENU_START_Y,
+                          MENU_BUTTON_W, MENU_BUTTON_H)) {
+        return 0;
+    }
+
+    return -1;
+}
+
+static int sync_button_selection_from_mouse(int *selected) {
+    int hovered_button = button_at_point(cursor_x, cursor_y);
+
+    if (hovered_button >= 0) {
+        *selected = hovered_button;
+    }
+
+    return hovered_button;
+}
+
+static void draw_selected_menu_button(int selected) {
+    video_draw_selection_box(MENU_BUTTON_X + MENU_BUTTON_SELECT_X_OFFSET,
+                             (selected == 0 ? MENU_START_Y : MENU_EXIT_Y) +
+                             MENU_BUTTON_SELECT_Y_OFFSET,
+                             MENU_BUTTON_SELECT_W,
+                             MENU_BUTTON_SELECT_H);
+}
+
+static void choose_current_character(void) {
+    if (!choosing_player2) {
+        selected_player1 = character_selected_index;
+        selected_player2 = -1;
+        character_selected_index = first_available_character(selected_player1);
+        choosing_player2 = true;
+    } else if (character_selected_index != selected_player1) {
+        selected_player2 = character_selected_index;
+        start_match_from_selection();
+    }
+}
+
+static void choose_current_field(void) {
+    selected_field = (t_field_type)field_selected_index;
+    start_match_from_field_selection();
+}
+
 static void open_character_select(void) {
     selected_player1 = -1;
     selected_player2 = -1;
     selected_field = FIELD_JUNGLE;
+    character_selected_index = 0;
+    field_selected_index = FIELD_JUNGLE;
     choosing_player2 = false;
     current_state = STATE_CHARACTER_SELECT;
 }
@@ -137,6 +237,7 @@ static void start_match_from_selection(void) {
 
     player1_pixmap = &player_pixmaps[selected_player1];
     player2_pixmap = &player_pixmaps[selected_player2];
+    field_selected_index = selected_field;
     current_state = STATE_FIELD_SELECT;
 }
 
@@ -161,6 +262,7 @@ static int countdown_display_value(void) {
 
 static void finish_match(int winning_player) {
     winner = winning_player;
+    end_menu_selected = 0;
     current_state = STATE_END;
 }
 
@@ -211,6 +313,11 @@ void game_init(void) {
     selected_player1 = -1;
     selected_player2 = -1;
     selected_field = FIELD_JUNGLE;
+    main_menu_selected = 0;
+    pause_menu_selected = 0;
+    character_selected_index = 0;
+    field_selected_index = FIELD_JUNGLE;
+    end_menu_selected = 0;
     choosing_player2 = false;
     player1_pixmap = &player_pixmaps[0];
     player2_pixmap = &player_pixmaps[1];
@@ -228,8 +335,16 @@ int game_update(void) {
     update_menu_cursor();
 
     if (current_state == STATE_MENU) {
+        int hovered_button = sync_button_selection_from_mouse(&main_menu_selected);
+        move_vertical_selection(&main_menu_selected, 2, kb);
+
         if (kb->enter) {
-            open_character_select();
+            if (main_menu_selected == 0) {
+                open_character_select();
+            } else {
+                should_exit = true;
+                return finish_update(1);
+            }
         }
 
         if (kb->pause) {
@@ -237,24 +352,29 @@ int game_update(void) {
             return finish_update(1);
         }
 
-        if (current_state == STATE_MENU && mouse_clicked) {
-            if (point_inside_rect(cursor_x, cursor_y,
-                                  MENU_BUTTON_X, MENU_EXIT_Y,
-                                  MENU_BUTTON_W, MENU_BUTTON_H)) {
+        if (current_state == STATE_MENU && mouse_clicked && hovered_button >= 0) {
+            if (main_menu_selected == 1) {
                 should_exit = true;
                 return finish_update(1);
             }
-            else if (point_inside_rect(cursor_x, cursor_y,
-                                       MENU_BUTTON_X, MENU_START_Y,
-                                       MENU_BUTTON_W, MENU_BUTTON_H)) {
+            else if (main_menu_selected == 0) {
                 open_character_select();
             }
         }
     }
 
     else if (current_state == STATE_CHARACTER_SELECT) {
+        int hovered_character = character_at_point(cursor_x, cursor_y);
+
+        if (hovered_character >= 0 &&
+            (!choosing_player2 || hovered_character != selected_player1)) {
+            character_selected_index = hovered_character;
+        }
+
+        move_character_selection(kb);
+
         if (kb->enter) {
-            start_match_from_selection();
+            choose_current_character();
         }
 
         if (kb->pause) {
@@ -263,33 +383,36 @@ int game_update(void) {
         }
 
         if (mouse_clicked) {
-            int character = character_at_point(cursor_x, cursor_y);
-
-            if (character >= 0) {
-                if (!choosing_player2) {
-                    selected_player1 = character;
-                    selected_player2 = -1;
-                    choosing_player2 = true;
-                } else if (character != selected_player1) {
-                    selected_player2 = character;
-                    start_match_from_selection();
-                }
+            if (hovered_character >= 0 &&
+                (!choosing_player2 || hovered_character != selected_player1)) {
+                choose_current_character();
             }
         }
     }
 
     else if (current_state == STATE_FIELD_SELECT) {
+        t_field_type hovered_field = field_at_point(cursor_x, cursor_y);
+
+        if (hovered_field < FIELD_COUNT) {
+            field_selected_index = hovered_field;
+            selected_field = hovered_field;
+        }
+
+        move_horizontal_selection(&field_selected_index, FIELD_COUNT, kb);
+        selected_field = (t_field_type)field_selected_index;
+
+        if (kb->enter) {
+            choose_current_field();
+        }
+
         if (kb->pause) {
             current_state = STATE_CHARACTER_SELECT;
             return finish_update(0);
         }
 
         if (mouse_clicked) {
-            t_field_type field = field_at_point(cursor_x, cursor_y);
-
-            if (field < FIELD_COUNT) {
-                selected_field = field;
-                start_match_from_field_selection();
+            if (hovered_field < FIELD_COUNT) {
+                choose_current_field();
             }
         }
     }
@@ -309,6 +432,7 @@ int game_update(void) {
 
     else if (current_state == STATE_PLAYING) {
         if (kb->pause) {
+            pause_menu_selected = 0;
             current_state = STATE_PAUSED;
             return finish_update(0);
         }
@@ -356,32 +480,43 @@ int game_update(void) {
     }
 
     else if (current_state == STATE_PAUSED) {
+        int hovered_button = sync_button_selection_from_mouse(&pause_menu_selected);
+        move_vertical_selection(&pause_menu_selected, 2, kb);
+
         if (kb->enter) {
-            current_state = STATE_PLAYING;
+            if (pause_menu_selected == 0) {
+                current_state = STATE_PLAYING;
+            } else {
+                current_state = STATE_MENU;
+            }
         }
 
         if (kb->pause) {
             current_state = STATE_MENU;
         }
 
-        if (current_state == STATE_PAUSED && mouse_clicked) {
-            if (point_inside_rect(cursor_x, cursor_y,
-                                  MENU_BUTTON_X, MENU_EXIT_Y,
-                                  MENU_BUTTON_W, MENU_BUTTON_H)) {
+        if (current_state == STATE_PAUSED && mouse_clicked && hovered_button >= 0) {
+            if (pause_menu_selected == 1) {
                 current_state = STATE_MENU;
             }
-            else if (point_inside_rect(cursor_x, cursor_y,
-                                       MENU_BUTTON_X, MENU_START_Y,
-                                       MENU_BUTTON_W, MENU_BUTTON_H)) {
+            else if (pause_menu_selected == 0) {
                 current_state = STATE_PLAYING;
             }
         }
     }
 
     else if (current_state == STATE_END) {
+        int hovered_button = sync_button_selection_from_mouse(&end_menu_selected);
+        move_vertical_selection(&end_menu_selected, 2, kb);
+
         if (kb->enter) {
-            reset_match();
-            current_state = STATE_COUNTDOWN;
+            if (end_menu_selected == 0) {
+                reset_match();
+                current_state = STATE_COUNTDOWN;
+            } else {
+                reset_match();
+                current_state = STATE_MENU;
+            }
         }
 
         if (kb->pause) {
@@ -390,16 +525,12 @@ int game_update(void) {
             return finish_update(0);
         }
 
-        if (mouse_clicked) {
-            if (point_inside_rect(cursor_x, cursor_y,
-                                  MENU_BUTTON_X, MENU_EXIT_Y,
-                                  MENU_BUTTON_W, MENU_BUTTON_H)) {
+        if (mouse_clicked && hovered_button >= 0) {
+            if (end_menu_selected == 1) {
                 reset_match();
                 current_state = STATE_MENU;
             }
-            else if (point_inside_rect(cursor_x, cursor_y,
-                                       MENU_BUTTON_X, MENU_START_Y,
-                                       MENU_BUTTON_W, MENU_BUTTON_H)) {
+            else if (end_menu_selected == 0) {
                 reset_match();
                 current_state = STATE_COUNTDOWN;
             }
@@ -412,16 +543,22 @@ int game_update(void) {
 void game_render(void) {
     if (current_state == STATE_MENU) {
         draw_main_menu();
+        draw_selected_menu_button(main_menu_selected);
         video_draw_cursor(cursor_x, cursor_y);
     }
 
     else if (current_state == STATE_CHARACTER_SELECT) {
         video_draw_character_select(selected_player1, selected_player2, choosing_player2);
+        video_draw_selection_box(character_card_x[character_selected_index],
+                                 CHARACTER_CARD_Y,
+                                 CHARACTER_CARD_W, CHARACTER_CARD_H);
         video_draw_cursor(cursor_x, cursor_y);
     }
 
     else if (current_state == STATE_FIELD_SELECT) {
         draw_field_select_menu();
+        video_draw_selection_box(field_card_x[field_selected_index], FIELD_CARD_Y,
+                                 FIELD_CARD_W, FIELD_CARD_H);
         video_draw_cursor(cursor_x, cursor_y);
     }
 
@@ -454,12 +591,14 @@ void game_render(void) {
         video_draw_players(&g_player1, &g_player2);
 
         draw_pause_menu();
+        draw_selected_menu_button(pause_menu_selected);
         video_draw_cursor(cursor_x, cursor_y);
     }
 
     else if (current_state == STATE_END) {
         draw_end_screen(winner);
         video_draw_end_overlay(score_p1, score_p2);
+        draw_selected_menu_button(end_menu_selected);
         video_draw_cursor(cursor_x, cursor_y);
     }
 

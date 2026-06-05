@@ -56,6 +56,16 @@ void draw_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
     }
 }
 
+void video_draw_selection_box(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+    const uint32_t color = 0xF2B51F;
+    const uint16_t thickness = 4;
+
+    draw_rectangle_bb(x, y, width, thickness, color);
+    draw_rectangle_bb(x, y + height - thickness, width, thickness, color);
+    draw_rectangle_bb(x, y, thickness, height, color);
+    draw_rectangle_bb(x + width - thickness, y, thickness, height, color);
+}
+
 void video_draw_net() {
     /* Net hitbox hidden — uncomment to debug:
     uint16_t net_width = 10;
