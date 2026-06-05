@@ -1,6 +1,6 @@
 # Architecture
 
-This document summarizes the main architecture of the LCOM project and explains
+This document summarizes the main architecture of Volley Master, project made for LCOM, and explains
 how the game loop, state machine, input, rendering, physics, RTC and assets work
 together.
 
