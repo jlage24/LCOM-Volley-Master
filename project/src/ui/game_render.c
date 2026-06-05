@@ -125,6 +125,7 @@ static uint8_t glyph_row(char c, int row) {
         {7, 5, 7, 1, 7}
     };
     static const uint8_t colon[5] = {0, 2, 0, 2, 0};
+    static const uint8_t slash[5] = {1, 1, 2, 4, 4};
     static const uint8_t plus[5] = {0, 2, 7, 2, 0};
 
     if (c >= '0' && c <= '9') {
@@ -132,6 +133,9 @@ static uint8_t glyph_row(char c, int row) {
     }
     if (c == ':') {
         return colon[row];
+    }
+    if (c == '/') {
+        return slash[row];
     }
     if (c == '+') {
         return plus[row];
@@ -327,6 +331,37 @@ void video_draw_hud(int score_left, int score_right, int seconds_left) {
     uint16_t x = (h_res - text_width(hud, scale)) / 2;
     draw_text(hud, x + 2, y + 2, scale, 0x000000);
     draw_text(hud, x, y, scale, 0xFFFFFF);
+}
+
+void video_draw_rtc_date(const rtc_date *date) {
+    char date_text[9];
+    char time_text[6];
+    uint16_t scale = 4;
+    uint16_t date_w;
+    uint16_t time_w;
+    uint16_t x;
+    uint16_t y = 28;
+
+    if (date == NULL) {
+        return;
+    }
+
+    snprintf(date_text, sizeof(date_text), "%02u/%02u/%02u",
+             date->day, date->month, date->year);
+    snprintf(time_text, sizeof(time_text), "%02u:%02u",
+             date->hours, date->minutes);
+
+    date_w = text_width(date_text, scale);
+    time_w = text_width(time_text, scale);
+    x = h_res - date_w - 30;
+
+    draw_rectangle_bb(x - 12, y - 10, date_w + 24, 58, 0x17120A);
+    draw_text(date_text, x + 2, y + 2, scale, 0x000000);
+    draw_text(date_text, x, y, scale, 0xFFFFFF);
+
+    x = h_res - time_w - 30;
+    draw_text(time_text, x + 2, y + 28, scale, 0x000000);
+    draw_text(time_text, x, y + 26, scale, 0xF2B51F);
 }
 
 void video_draw_end_overlay(int score_left, int score_right) {

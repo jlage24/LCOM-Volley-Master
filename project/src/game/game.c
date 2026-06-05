@@ -4,6 +4,7 @@
 
 #include "../devices/keyboard.h"
 #include "../devices/mouse.h"
+#include "../devices/rtc.h"
 #include "../ui/assets.h"
 #include "../ui/game_render.h"
 #include "../ui/menu.h"
@@ -22,6 +23,7 @@
 #define FIELD_CARD_H 205
 #define COUNTDOWN_NUMBER_TICKS 60
 #define COUNTDOWN_START_TICKS 45
+#define RTC_REFRESH_TICKS 60
 
 /* Global game state */
 GameState current_state = STATE_MENU;
@@ -51,6 +53,9 @@ static int pause_menu_selected = 0;
 static int character_selected_index = 0;
 static int field_selected_index = FIELD_JUNGLE;
 static int end_menu_selected = 0;
+static rtc_date current_rtc_date;
+static bool rtc_valid = false;
+static int rtc_update_ticks = 0;
 static const int character_card_x[PLAYER_CHARACTER_COUNT] = {
     112, 247, 381, 514, 647, 780
 };
@@ -75,6 +80,33 @@ static void update_menu_cursor(void) {
 static int finish_update(int status) {
     mouse_button_was_down = mouse_state.left_button;
     return status;
+}
+
+static bool state_shows_menu(GameState state) {
+    return state == STATE_MENU ||
+           state == STATE_CHARACTER_SELECT ||
+           state == STATE_FIELD_SELECT ||
+           state == STATE_PAUSED ||
+           state == STATE_END;
+}
+
+static void refresh_rtc_cache(void) {
+    if (rtc_read_date(&current_rtc_date) == 0) {
+        rtc_valid = true;
+    }
+}
+
+static void update_rtc_cache(void) {
+    if (!state_shows_menu(current_state)) {
+        rtc_update_ticks = 0;
+        return;
+    }
+
+    rtc_update_ticks++;
+    if (rtc_update_ticks >= RTC_REFRESH_TICKS) {
+        rtc_update_ticks = 0;
+        refresh_rtc_cache();
+    }
 }
 
 static void reset_round(int ball_direction) {
@@ -318,9 +350,13 @@ void game_init(void) {
     character_selected_index = 0;
     field_selected_index = FIELD_JUNGLE;
     end_menu_selected = 0;
+    rtc_valid = false;
+    rtc_update_ticks = 0;
     choosing_player2 = false;
     player1_pixmap = &player_pixmaps[0];
     player2_pixmap = &player_pixmaps[1];
+
+    refresh_rtc_cache();
 
     ball_init(&g_ball, 1);
 
@@ -333,6 +369,7 @@ int game_update(void) {
     bool mouse_clicked = mouse_state.left_button && !mouse_button_was_down;
 
     update_menu_cursor();
+    update_rtc_cache();
 
     if (current_state == STATE_MENU) {
         int hovered_button = sync_button_selection_from_mouse(&main_menu_selected);
@@ -543,6 +580,9 @@ int game_update(void) {
 void game_render(void) {
     if (current_state == STATE_MENU) {
         draw_main_menu();
+        if (rtc_valid) {
+            video_draw_rtc_date(&current_rtc_date);
+        }
         draw_selected_menu_button(main_menu_selected);
         video_draw_cursor(cursor_x, cursor_y);
     }

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <lcom/lcf.h>
 #include "../game/game.h" 
+#include "../devices/rtc.h"
 
 int video_init_back_buffer();
 void video_free_back_buffer();
@@ -17,6 +18,7 @@ void video_draw_net();
 void video_draw_ball(Ball *b);
 void video_draw_players(Player *p1, Player *p2);
 void video_draw_hud(int score_left, int score_right, int seconds_left);
+void video_draw_rtc_date(const rtc_date *date);
 void video_draw_end_overlay(int score_left, int score_right);
 void video_draw_countdown(int value);
 void video_draw_sudden_death_notice(int seconds, int frame_count);
