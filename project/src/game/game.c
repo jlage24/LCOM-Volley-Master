@@ -562,7 +562,7 @@ int game_update(void) {
         }
 
         if (kb->pause) {
-            current_state = STATE_MENU;
+            current_state = STATE_PLAYING;
         }
 
         if (current_state == STATE_PAUSED && mouse_clicked && hovered_button >= 0) {
@@ -685,7 +685,8 @@ void game_render(void) {
 
     else if (current_state == STATE_END) {
         draw_end_screen(winner);
-        video_draw_end_overlay(score_p1, score_p2);
+        video_draw_final_score(score_p1, score_p2);
+        draw_end_menu_buttons();
         draw_selected_menu_button(end_menu_selected);
         video_draw_cursor(cursor_x, cursor_y);
     }

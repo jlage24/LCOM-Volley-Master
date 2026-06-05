@@ -127,6 +127,7 @@ static uint8_t glyph_row(char c, int row) {
     static const uint8_t colon[5] = {0, 2, 0, 2, 0};
     static const uint8_t slash[5] = {1, 1, 2, 4, 4};
     static const uint8_t plus[5] = {0, 2, 7, 2, 0};
+    static const uint8_t dash[5] = {0, 0, 7, 0, 0};
 
     if (c >= '0' && c <= '9') {
         return digits[c - '0'][row];
@@ -139,6 +140,9 @@ static uint8_t glyph_row(char c, int row) {
     }
     if (c == '+') {
         return plus[row];
+    }
+    if (c == '-') {
+        return dash[row];
     }
     return 0;
 }
@@ -364,25 +368,46 @@ void video_draw_rtc_date(const rtc_date *date) {
     draw_text(time_text, x, y + 26, scale, 0xF2B51F);
 }
 
-void video_draw_end_overlay(int score_left, int score_right) {
-    char score[8];
-    uint16_t score_scale = 12;
+void video_draw_final_score(int score_p1, int score_p2) {
+    const uint16_t card_w = 300;
+    const uint16_t card_h = 34;
+    const uint16_t card_x = (h_res - card_w) / 2;
+    const uint16_t card_y = 160;
+    const uint16_t border = 2;
+    const uint16_t label_scale = 2;
+    const uint16_t score_scale = 3;
+    const char *label = "FINAL SCORE";
+    char score[16];
+    uint16_t label_w;
     uint16_t score_w;
+    uint16_t score_h = 5 * score_scale;
+    uint16_t group_w;
+    uint16_t label_x;
+    uint16_t label_y;
     uint16_t score_x;
-    uint16_t score_y = 148;
+    uint16_t score_y;
 
-    snprintf(score, sizeof(score), "%d   %d", score_left, score_right);
+    snprintf(score, sizeof(score), "%d - %d", score_p1, score_p2);
+    label_w = wide_text_width(label, label_scale);
     score_w = text_width(score, score_scale);
-    score_x = (h_res - score_w) / 2;
+    group_w = label_w + 24 + score_w;
+    label_x = card_x + (card_w - group_w) / 2;
+    label_y = card_y + 10;
+    score_x = label_x + label_w + 24;
+    score_y = card_y + (card_h - score_h) / 2;
 
-    draw_rectangle_bb(score_x - 24, score_y - 18, score_w + 48, 5 * score_scale + 36, 0x17120A);
-    draw_rectangle_bb(score_x - 24, score_y - 18, score_w + 48, 4, 0xD58C2A);
-    draw_rectangle_bb(score_x - 24, score_y + (5 * score_scale) + 14, score_w + 48, 4, 0xD58C2A);
-    draw_rectangle_bb(score_x - 24, score_y - 18, 4, 5 * score_scale + 36, 0xD58C2A);
-    draw_rectangle_bb(score_x + score_w + 20, score_y - 18, 4, 5 * score_scale + 36, 0xD58C2A);
+    draw_rectangle_bb(card_x, card_y, card_w, card_h, 0x12180F);
+    draw_rectangle_bb(card_x + border, card_y + border,
+                      card_w - (border * 2), card_h - (border * 2), 0x1E2B17);
+    draw_rectangle_bb(card_x, card_y, card_w, border, 0x4B5F35);
+    draw_rectangle_bb(card_x, card_y + card_h - border, card_w, border, 0x4B5F35);
+    draw_rectangle_bb(card_x, card_y, border, card_h, 0x4B5F35);
+    draw_rectangle_bb(card_x + card_w - border, card_y, border, card_h, 0x4B5F35);
 
-    draw_text(score, score_x + 4, score_y + 4, score_scale, 0x000000);
-    draw_text(score, score_x, score_y, score_scale, 0xFFFFFF);
+    draw_wide_text(label, label_x + 1, label_y + 1, label_scale, 0x000000);
+    draw_wide_text(label, label_x, label_y, label_scale, 0xB9C59A);
+    draw_text(score, score_x + 2, score_y + 2, score_scale, 0x000000);
+    draw_text(score, score_x, score_y, score_scale, 0xE0E6C8);
 }
 
 void video_draw_countdown(int value) {

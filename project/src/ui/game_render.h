@@ -19,7 +19,7 @@ void video_draw_ball(Ball *b);
 void video_draw_players(Player *p1, Player *p2);
 void video_draw_hud(int score_left, int score_right, int seconds_left);
 void video_draw_rtc_date(const rtc_date *date);
-void video_draw_end_overlay(int score_left, int score_right);
+void video_draw_final_score(int score_p1, int score_p2);
 void video_draw_countdown(int value);
 void video_draw_sudden_death_notice(int seconds, int frame_count);
 void video_draw_character_select(int selected_p1, int selected_p2, bool choosing_p2);
