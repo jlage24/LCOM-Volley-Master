@@ -34,7 +34,7 @@ void player1_update(Player *p) {
 }
 
 void player2_update(Player *p) {
-    const float mouse_sensitivity = 1.8f;
+    const float mouse_sensitivity = 1.2f;
     float previous_x = p->x;
 
     float movement = (float)mouse_state.dx * mouse_sensitivity;
