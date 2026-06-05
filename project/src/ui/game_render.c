@@ -65,7 +65,15 @@ void video_draw_net() {
     */
 }
 
+static bool xpm_is_valid(const xpm_image_t *img) {
+    return img != NULL && img->bytes != NULL && img->width > 0 && img->height > 0;
+}
+
 void video_draw_ball(Ball *b) {
+    if (b == NULL || !xpm_is_valid(&ball_pixmap)) {
+        return;
+    }
+
     uint16_t draw_x = (uint16_t)(b->x) - ball_pixmap.width / 2;
     uint16_t draw_y = (uint16_t)(b->y) - ball_pixmap.height / 2;
     
@@ -76,16 +84,18 @@ void video_draw_players(Player *p1, Player *p2) {
     uint16_t width = PLAYER_WIDTH;
     uint16_t height = PLAYER_HEIGHT;
     
-    uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
-    uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
-    if (player1_pixmap != NULL) {
+    if (p1 != NULL && xpm_is_valid(player1_pixmap)) {
+        uint16_t p1_x = (uint16_t)(p1->x) - (width / 2);
+        uint16_t p1_y = (uint16_t)(p1->y) - (height / 2);
+
         if (p1->facing_right) draw_xpm(*player1_pixmap, p1_x, p1_y);
         else draw_xpm_flipped_horizontal(*player1_pixmap, p1_x, p1_y);
     }
     
-    uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
-    uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
-    if (player2_pixmap != NULL) {
+    if (p2 != NULL && xpm_is_valid(player2_pixmap)) {
+        uint16_t p2_x = (uint16_t)(p2->x) - (width / 2);
+        uint16_t p2_y = (uint16_t)(p2->y) - (height / 2);
+
         if (p2->facing_right) draw_xpm(*player2_pixmap, p2_x, p2_y);
         else draw_xpm_flipped_horizontal(*player2_pixmap, p2_x, p2_y);
     }
@@ -346,6 +356,10 @@ void video_draw_cursor(int x, int y) {
 }
 
 void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
+    if (!xpm_is_valid(&img)) {
+        return;
+    }
+
     uint32_t *map = (uint32_t *)img.bytes;
     uint32_t transparent = xpm_transparency_color(img.type);
     
@@ -360,6 +374,10 @@ void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
 }
 
 void draw_xpm_flipped_horizontal(xpm_image_t img, uint16_t x, uint16_t y) {
+    if (!xpm_is_valid(&img)) {
+        return;
+    }
+
     uint32_t *map = (uint32_t *)img.bytes;
     uint32_t transparent = xpm_transparency_color(img.type);
 

@@ -2,10 +2,10 @@
 
 #pragma clang optimize off
 
-#include "../images/beach_volley.xpm"
-#include "../images/desert_volley.xpm"
-#include "../images/jungle_volley.xpm"
-#include "../images/ice_volley.xpm"
+#include "../images/fields/beach_volley.xpm"
+#include "../images/fields/desert_volley.xpm"
+#include "../images/fields/jungle_volley.xpm"
+#include "../images/fields/ice_volley.xpm"
 
 
 void load_field_assets() {
