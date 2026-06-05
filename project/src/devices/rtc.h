@@ -1,5 +1,11 @@
 #pragma once
 
+/*
+ * RTC date/time interface.
+ *
+ * rtc.c reads the hardware RTC, normalizes BCD/12-hour formats, and returns a
+ * compact date structure used by the menu HUD.
+ */
 #include <stdint.h>
 #include <lcom/lcf.h>
 

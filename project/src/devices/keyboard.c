@@ -1,3 +1,10 @@
+/*
+ * Keyboard input adapter.
+ *
+ * The low-level KBC interrupt handler reads raw scancodes; this module turns
+ * them into game-friendly state. Held movement keys remain true until their
+ * break code arrives, while menu/action events are cleared once per game tick.
+ */
 #include "keyboard.h"
 #include "../../../lab3/kbc.h"
 
@@ -14,11 +21,13 @@ static KeyboardState kb_state = {
 };
 
 void keyboard_handle(uint8_t scancode) {
+    /* Bit 7 distinguishes make codes from break codes for these one-byte keys. */
     bool make = !(scancode & BIT(7));
 
     switch (scancode & ~BIT(7)) {
         case SCANCODE_A:
             kb_state.move_left = make;
+            /* Direction events are edge-like menu inputs; movement is held state. */
             if (make) kb_state.left = true;
             break;
         case SCANCODE_D:
@@ -45,6 +54,7 @@ const KeyboardState *get_keyboard_state(void) {
 }
 
 void keyboard_clear_events(void) {
+    /* Clear one-frame events after game_update consumes them. */
     kb_state.jump  = false;
     kb_state.pause = false;
     kb_state.enter = false;

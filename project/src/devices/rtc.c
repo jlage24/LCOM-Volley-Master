@@ -1,3 +1,10 @@
+/*
+ * RTC date/time reader.
+ *
+ * The game uses this module only to show the current date/time on menu screens.
+ * Reads are synchronous and cached by game.c, so the main loop avoids querying
+ * the RTC every frame.
+ */
 #include "rtc.h"
 
 #define TODO return -1
@@ -24,6 +31,10 @@ static int bcd_to_bin(uint8_t bcd) {
 int rtc_read_date(rtc_date *date) { 
   if (date == NULL) return -1;
 
+  /*
+   * Wait while the RTC is updating internal registers. Reading during UIP can
+   * mix values from two different seconds.
+   */
   uint32_t reg_a;
   do {
     if (sys_outb(RTC_ADDR_REG, RTC_REG_A) != OK) return -1;
@@ -49,6 +60,7 @@ int rtc_read_date(rtc_date *date) {
 
   uint8_t raw_hours = (uint8_t) hours;
 
+  /* Register B tells whether values are binary or BCD encoded. */
   if (!(reg_b & RTC_DM_MSK)) {  
     seconds = bcd_to_bin((uint8_t) seconds);
     minutes = bcd_to_bin((uint8_t) minutes);
@@ -60,6 +72,7 @@ int rtc_read_date(rtc_date *date) {
     hours &= ~RTC_PM_MSK;
   }
 
+  /* Normalize 12-hour RTC mode to the 24-hour format used by the UI. */
   if (!(reg_b & RTC_24H_MSK)) {
     if (raw_hours & RTC_PM_MSK) {
       hours = ((hours % 12) + 12);

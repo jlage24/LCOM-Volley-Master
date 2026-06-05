@@ -1,6 +1,12 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
+/*
+ * Menu and field-screen drawing API.
+ *
+ * These functions draw static screen assets only. game.c owns navigation,
+ * selected indexes and transitions.
+ */
 #include "../game/game.h"
 #include "game_render.h"
 
