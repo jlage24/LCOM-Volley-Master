@@ -8,6 +8,6 @@ void draw_main_menu();
 void draw_pause_menu();
 void draw_field(t_field_type field);
 void draw_field_select_menu();
+void draw_end_screen(t_winner winner);
 
 #endif /* _MENU_H_ */
-

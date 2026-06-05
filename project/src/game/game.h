@@ -38,6 +38,12 @@ typedef enum e_field_type {
 
 extern t_field_type selected_field;
 
+typedef enum e_winner {
+    WINNER_NONE,
+    WINNER_PLAYER1,
+    WINNER_PLAYER2
+} t_winner;
+
 typedef struct {
     float x;
     float y;

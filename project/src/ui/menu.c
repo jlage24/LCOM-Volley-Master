@@ -33,6 +33,14 @@ void draw_field_select_menu() {
     draw_xpm(field_select_pixmap, 0, 0);
 }
 
+void draw_end_screen(t_winner winner) {
+    if (winner == WINNER_PLAYER1) {
+        draw_xpm(player1_wins_pixmap, 0, 0);
+    } else if (winner == WINNER_PLAYER2) {
+        draw_xpm(player2_wins_pixmap, 0, 0);
+    }
+}
+
 void draw_field(t_field_type field) {
     switch (field) {
         case FIELD_BEACH:
@@ -50,7 +58,6 @@ void draw_field(t_field_type field) {
             break;
     }
 }
-
 
 
 

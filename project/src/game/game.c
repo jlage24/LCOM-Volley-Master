@@ -20,6 +20,7 @@
 /* Global game state */
 GameState current_state = STATE_MENU;
 t_field_type selected_field = FIELD_JUNGLE;
+static t_winner match_winner = WINNER_NONE;
 
 /* Internal game objects */
 static Ball g_ball;
@@ -78,6 +79,7 @@ static void reset_match(void) {
     sudden_death_seconds = 0;
     timer_frame_count = 0;
     sudden_death = false;
+    match_winner = WINNER_NONE;
     reset_round(1);
 }
 
@@ -139,9 +141,22 @@ static void start_match_from_field_selection(void) {
     current_state = STATE_PLAYING;
 }
 
+static t_winner winner_from_score(void) {
+    if (score_p1 > score_p2) {
+        return WINNER_PLAYER1;
+    }
+
+    return WINNER_PLAYER2;
+}
+
+static void finish_match(void) {
+    match_winner = winner_from_score();
+    current_state = STATE_END;
+}
+
 static void check_win_after_point(void) {
     if (sudden_death) {
-        current_state = STATE_END;
+        finish_match();
         return;
     }
 }
@@ -170,7 +185,7 @@ static void update_game_timer(void) {
             sudden_death_seconds = 0;
             timer_frame_count = 0;
         } else {
-            current_state = STATE_END;
+            finish_match();
         }
     }
 }
@@ -188,6 +203,7 @@ void game_init(void) {
     mouse_button_was_down = false;
     should_exit = false;
     sudden_death = false;
+    match_winner = WINNER_NONE;
     selected_player1 = -1;
     selected_player2 = -1;
     selected_field = FIELD_JUNGLE;
@@ -392,7 +408,7 @@ void game_render(void) {
     }
 
     else if (current_state == STATE_END) {
-        draw_main_menu();
+        draw_end_screen(match_winner);
     }
 
     video_flush();
