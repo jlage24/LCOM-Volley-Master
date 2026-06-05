@@ -5,6 +5,7 @@
 
 /* Player movement constants. */
 #define PLAYER1_SPEED   5.0f
+#define PLAYER2_SPEED   5.0f
 #define JUMP_IMPULSE   -8.0f
 #define PLAYER_WIDTH    120
 #define PLAYER_HEIGHT   180

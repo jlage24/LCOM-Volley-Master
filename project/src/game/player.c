@@ -34,11 +34,15 @@ void player1_update(Player *p) {
 }
 
 void player2_update(Player *p) {
-    const float mouse_sensitivity = 1.5f;
+    const float mouse_sensitivity = 1.8f;
     float previous_x = p->x;
 
-    p->vx = (float)mouse_state.dx * mouse_sensitivity;
-    p->x += p->vx;
+    float movement = (float)mouse_state.dx * mouse_sensitivity;
+    if (movement > PLAYER2_SPEED)  movement = PLAYER2_SPEED;
+    if (movement < -PLAYER2_SPEED) movement = -PLAYER2_SPEED;
+
+    p->vx = movement;
+    p->x += movement;
 
     if (p->x < NET_X + PLAYER_WIDTH / 2) p->x = NET_X + PLAYER_WIDTH / 2;
     if (p->x > H_RES - PLAYER_WIDTH / 2) p->x = H_RES - PLAYER_WIDTH / 2;
