@@ -1,3 +1,10 @@
+/*
+ * Low-level rendering helpers for gameplay and HUD.
+ *
+ * Higher-level modules decide what state to render; this file provides the
+ * back-buffered drawing primitives, XPM sprite composition, text glyphs, HUD,
+ * countdown, cursor and entity rendering used by those states.
+ */
 #include "game_render.h"
 #include "assets.h"
 #include "../game/player.h"
@@ -14,6 +21,7 @@ static uint16_t v_res = 768;
 static uint8_t bytes_per_pixel = 3;
 
 int video_init_back_buffer() {
+    /* All drawing targets RAM first; video_flush copies one complete frame to VRAM. */
     unsigned int vram_size = h_res * v_res * bytes_per_pixel;
     back_buffer = malloc(vram_size);
     
@@ -41,9 +49,10 @@ int vg_draw_pixel_bb(uint16_t x, uint16_t y, uint32_t color) {
     unsigned int offset = (y * h_res + x) * bytes_per_pixel;
     uint8_t *pixel = (uint8_t*)back_buffer + offset;
     
-    pixel[0] = color & 0xFF;             // Blue
-    pixel[1] = (color >> 8) & 0xFF;      // Green
-    pixel[2] = (color >> 16) & 0xFF;     // Red
+    /* Mode 0x115 stores pixels as BGR in three bytes. */
+    pixel[0] = color & 0xFF;
+    pixel[1] = (color >> 8) & 0xFF;
+    pixel[2] = (color >> 16) & 0xFF;
     
     return 0;
 }
@@ -112,6 +121,7 @@ void video_draw_players(Player *p1, Player *p2) {
 }
 
 static uint8_t glyph_row(char c, int row) {
+    /* Compact 3x5 bitmap font used for numeric HUD/date text. */
     static const uint8_t digits[10][5] = {
         {7, 5, 5, 5, 7},
         {2, 6, 2, 2, 7},
@@ -127,6 +137,7 @@ static uint8_t glyph_row(char c, int row) {
     static const uint8_t colon[5] = {0, 2, 0, 2, 0};
     static const uint8_t slash[5] = {1, 1, 2, 4, 4};
     static const uint8_t plus[5] = {0, 2, 7, 2, 0};
+    static const uint8_t dash[5] = {0, 0, 7, 0, 0};
 
     if (c >= '0' && c <= '9') {
         return digits[c - '0'][row];
@@ -139,6 +150,9 @@ static uint8_t glyph_row(char c, int row) {
     }
     if (c == '+') {
         return plus[row];
+    }
+    if (c == '-') {
+        return dash[row];
     }
     return 0;
 }
@@ -179,6 +193,7 @@ static void draw_text(const char *text, uint16_t x, uint16_t y,
 }
 
 static uint8_t wide_glyph_row(char c, int row) {
+    /* Wider 5x7 font used for state banners and labels. */
     static const uint8_t letters[26][7] = {
         {14, 17, 17, 31, 17, 17, 17}, // A
         {30, 17, 17, 30, 17, 17, 30}, // B
@@ -287,6 +302,7 @@ void video_draw_character_select(int selected_p1, int selected_p2, bool choosing
     for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
         uint16_t x = character_card_x[i];
 
+        /* P1's locked pick is blocked for P2; selected cards get a border. */
         if (selected_p1 == i) {
             draw_locked_character_overlay(x + 3, CHARACTER_LOCK_Y);
         } else if (selected_p2 == i) {
@@ -304,6 +320,7 @@ void video_draw_sudden_death_notice(int seconds, int frame_count) {
     uint16_t y = 105;
     uint32_t color = (frame_count < 30) ? 0xFF3A2E : 0xFFFFFF;
 
+    /* Sudden death is announced only briefly to avoid covering play. */
     if (seconds >= 3) {
         return;
     }
@@ -319,6 +336,7 @@ void video_draw_hud(int score_left, int score_right, int seconds_left) {
     uint16_t scale = 5;
     uint16_t y = 24;
 
+    /* Negative time means overtime; show elapsed sudden-death time with '+'. */
     if (seconds_left < 0) {
         int overtime_seconds = -seconds_left;
         snprintf(hud, sizeof(hud), "%d   +%02d:%02d   %d",
@@ -364,25 +382,46 @@ void video_draw_rtc_date(const rtc_date *date) {
     draw_text(time_text, x, y + 26, scale, 0xF2B51F);
 }
 
-void video_draw_end_overlay(int score_left, int score_right) {
-    char score[8];
-    uint16_t score_scale = 12;
+void video_draw_final_score(int score_p1, int score_p2) {
+    const uint16_t card_w = 300;
+    const uint16_t card_h = 34;
+    const uint16_t card_x = (h_res - card_w) / 2;
+    const uint16_t card_y = 160;
+    const uint16_t border = 2;
+    const uint16_t label_scale = 2;
+    const uint16_t score_scale = 3;
+    const char *label = "FINAL SCORE";
+    char score[16];
+    uint16_t label_w;
     uint16_t score_w;
+    uint16_t score_h = 5 * score_scale;
+    uint16_t group_w;
+    uint16_t label_x;
+    uint16_t label_y;
     uint16_t score_x;
-    uint16_t score_y = 148;
+    uint16_t score_y;
 
-    snprintf(score, sizeof(score), "%d   %d", score_left, score_right);
+    snprintf(score, sizeof(score), "%d - %d", score_p1, score_p2);
+    label_w = wide_text_width(label, label_scale);
     score_w = text_width(score, score_scale);
-    score_x = (h_res - score_w) / 2;
+    group_w = label_w + 24 + score_w;
+    label_x = card_x + (card_w - group_w) / 2;
+    label_y = card_y + 10;
+    score_x = label_x + label_w + 24;
+    score_y = card_y + (card_h - score_h) / 2;
 
-    draw_rectangle_bb(score_x - 24, score_y - 18, score_w + 48, 5 * score_scale + 36, 0x17120A);
-    draw_rectangle_bb(score_x - 24, score_y - 18, score_w + 48, 4, 0xD58C2A);
-    draw_rectangle_bb(score_x - 24, score_y + (5 * score_scale) + 14, score_w + 48, 4, 0xD58C2A);
-    draw_rectangle_bb(score_x - 24, score_y - 18, 4, 5 * score_scale + 36, 0xD58C2A);
-    draw_rectangle_bb(score_x + score_w + 20, score_y - 18, 4, 5 * score_scale + 36, 0xD58C2A);
+    draw_rectangle_bb(card_x, card_y, card_w, card_h, 0x12180F);
+    draw_rectangle_bb(card_x + border, card_y + border,
+                      card_w - (border * 2), card_h - (border * 2), 0x1E2B17);
+    draw_rectangle_bb(card_x, card_y, card_w, border, 0x4B5F35);
+    draw_rectangle_bb(card_x, card_y + card_h - border, card_w, border, 0x4B5F35);
+    draw_rectangle_bb(card_x, card_y, border, card_h, 0x4B5F35);
+    draw_rectangle_bb(card_x + card_w - border, card_y, border, card_h, 0x4B5F35);
 
-    draw_text(score, score_x + 4, score_y + 4, score_scale, 0x000000);
-    draw_text(score, score_x, score_y, score_scale, 0xFFFFFF);
+    draw_wide_text(label, label_x + 1, label_y + 1, label_scale, 0x000000);
+    draw_wide_text(label, label_x, label_y, label_scale, 0xB9C59A);
+    draw_text(score, score_x + 2, score_y + 2, score_scale, 0x000000);
+    draw_text(score, score_x, score_y, score_scale, 0xE0E6C8);
 }
 
 void video_draw_countdown(int value) {
@@ -392,6 +431,7 @@ void video_draw_countdown(int value) {
     uint16_t x;
     uint16_t y;
 
+    /* The countdown shares the HUD font, then switches to a START banner. */
     if (value > 0) {
         char digit[2];
         digit[0] = (char)('0' + value);
@@ -460,6 +500,7 @@ void draw_xpm(xpm_image_t img, uint16_t x, uint16_t y) {
         return;
     }
 
+    /* XPM sprites are ARGB-like maps; transparent pixels leave the frame intact. */
     uint32_t *map = (uint32_t *)img.bytes;
     uint32_t transparent = xpm_transparency_color(img.type);
     
@@ -481,6 +522,7 @@ void draw_xpm_flipped_horizontal(xpm_image_t img, uint16_t x, uint16_t y) {
     uint32_t *map = (uint32_t *)img.bytes;
     uint32_t transparent = xpm_transparency_color(img.type);
 
+    /* Horizontal flip reuses one sprite for both facing directions. */
     for (uint16_t i = 0; i < img.height; i++) {
         for (uint16_t j = 0; j < img.width; j++) {
             uint32_t color = map[i * img.width + (img.width - 1 - j)];

@@ -1,6 +1,13 @@
 #ifndef _ASSETS_H_
 #define _ASSETS_H_
 
+/*
+ * Shared XPM asset registry.
+ *
+ * Assets are loaded once at startup by load_all_assets and then referenced by
+ * rendering/menu modules through these globals. game.c changes player1_pixmap
+ * and player2_pixmap to reflect selected characters.
+ */
 #include <lcom/lcf.h>
 
 #define PLAYER_CHARACTER_COUNT 6
@@ -32,6 +39,7 @@ extern xpm_image_t ball_pixmap;
 
 int load_all_assets();
 void free_all_assets();
+/* Loads only field backgrounds; called by load_all_assets. */
 void load_field_assets();
 
 #endif

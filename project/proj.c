@@ -1,3 +1,11 @@
+/*
+ * LCOM project entry point and interrupt loop.
+ *
+ * This file configures the timer, video mode, keyboard, mouse and assets, then
+ * drives the game through hardware notifications. The game module receives one
+ * update/render opportunity per 60 Hz timer tick; device interrupts only update
+ * input state consumed on the next tick.
+ */
 #include <lcom/lcf.h>
 #include <lcom/timer.h>
 
@@ -46,11 +54,11 @@ static void timer_cleanup(void) {
 int (proj_main_loop)(int argc, char *argv[]) {
     (void)argc; (void)argv;   /* Avoid unused parameter warnings. */
 
+    /* The timer is the heartbeat for both gameplay time and animation. */
     if (timer_init_60hz() != 0)
         return 1;
 
-    //ball_init(&g_ball, 0);
-
+    /* Video and assets are initialized before game state so rendering is ready. */
     if (vbe_map_vram(VIDEO_MODE) != 0) return 1;   
     if (vbe_set_mode(VIDEO_MODE) != 0) return 1;
     if (video_init_back_buffer() != 0) return 1;
@@ -106,6 +114,11 @@ int (proj_main_loop)(int argc, char *argv[]) {
             switch (_ENDPOINT_P(msg.m_source)) {
                 case HARDWARE:
                     if (msg.m_notify.interrupts & BIT(timer_irq_set)) {
+                        /*
+                         * Game logic advances only on timer ticks. This keeps
+                         * physics deterministic and prevents keyboard/mouse IRQ
+                         * rate from changing gameplay speed.
+                         */
                         tick_count++;
                         timer_int_handler();
 
@@ -120,6 +133,7 @@ int (proj_main_loop)(int argc, char *argv[]) {
                     }
 
                     if (msg.m_notify.interrupts & BIT(kbd_irq_set)) {
+                        /* Keyboard IRQs translate raw scancodes into game input state. */
                         kbc_ih();
 
                         if (get_scancode_ready() && !get_kbc_error()) {
@@ -128,6 +142,7 @@ int (proj_main_loop)(int argc, char *argv[]) {
                     }
 
                     if (msg.m_notify.interrupts & BIT(mouse_irq_set)) {
+                        /* Mouse IRQs collect bytes until a complete packet is available. */
                         mouse_ih();
 
                         if (!get_mouse_error()) {
@@ -142,6 +157,7 @@ int (proj_main_loop)(int argc, char *argv[]) {
         }
     }
 
+    /* Cleanup mirrors initialization order so devices stop producing input first. */
     mouse_write_cmd(MOUSE_DISABLE_DATA);
     mouse_unsubscribe_int();
 

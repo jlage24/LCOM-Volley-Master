@@ -1,3 +1,10 @@
+/*
+ * Mouse input adapter.
+ *
+ * The lab mouse handler reads one byte per interrupt. This module assembles the
+ * PS/2 three-byte packet, converts it into the shared MouseState, and exposes
+ * per-frame deltas for gameplay and menu cursor movement.
+ */
 #include "mouse.h"
 #include "../../../lab4/mouse.h"
 
@@ -37,10 +44,15 @@ int mouse_unsubscribe_int(void) {
 
 void mouse_handle_bytes(uint8_t byte) {
     if (get_mouse_error()) {
+        /* Drop partial packets after an error; the next sync byte restarts assembly. */
         mouse_idx = 0;
         return;
     }
 
+    /*
+     * Packet byte 0 must contain the sync bit. Ignoring unsynchronized bytes
+     * prevents stale or shifted packets from corrupting movement/button state.
+     */
     if (mouse_idx == 0 && !(byte & MOUSE_SYNC_BIT)) {
         return;
     }
@@ -50,6 +62,7 @@ void mouse_handle_bytes(uint8_t byte) {
     if (mouse_idx == 3) {
         struct packet pp;
 
+        /* A complete packet updates state atomically for the next game tick. */
         mouse_parse_packet(mouse_buf, &pp);
 
         mouse_state.dx = pp.delta_x;
@@ -64,6 +77,7 @@ void mouse_handle_bytes(uint8_t byte) {
 }
 
 void mouse_clear_state(void) {
+    /* Deltas are transient; buttons remain latched until the next packet changes them. */
     mouse_state.dx = 0;
     mouse_state.dy = 0;
     mouse_state.new_data = false;

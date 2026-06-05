@@ -1,6 +1,13 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
+/*
+ * Shared game model and public game-loop API.
+ *
+ * This header defines the court constants, state identifiers and lightweight
+ * entity structs shared by gameplay, rendering and menu code. game.c owns the
+ * mutable match state and exposes init/update/render entry points.
+ */
 #include <stdbool.h>
 
 #define VIDEO_MODE  0x118
@@ -19,6 +26,7 @@
 #define CHARACTER_LOCK_Y 389
 
 typedef enum {
+    /* High-level screens and phases handled by game_update/game_render. */
     STATE_MENU,
     STATE_CHARACTER_SELECT,
     STATE_FIELD_SELECT,
@@ -32,6 +40,7 @@ typedef enum {
 extern GameState current_state;
 
 typedef enum e_field_type {
+    /* Field order matches the card indexes used by field selection. */
     FIELD_BEACH,
     FIELD_DESERT,
     FIELD_ICE,
@@ -48,6 +57,7 @@ typedef enum e_winner {
 } t_winner;
 
 typedef struct {
+    /* Ball position is its center; velocity is measured in pixels per frame. */
     float x;
     float y;
     float vx;
@@ -55,6 +65,7 @@ typedef struct {
 } Ball;
 
 typedef struct {
+    /* Player position is the sprite/hitbox center used for collision/rendering. */
     float x;
     float y;
     float vx;
@@ -65,6 +76,7 @@ typedef struct {
 } Player;
 
 void game_init(void);
+/* Advance one 60 Hz frame; returns non-zero when the main loop should stop. */
 int game_update(void);
 void game_render(void);
 bool game_should_exit(void);

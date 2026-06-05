@@ -1,3 +1,10 @@
+/*
+ * Ball physics and scoring.
+ *
+ * The game state machine owns when a rally starts or ends; this module owns how
+ * the ball moves during a frame, how it reacts to the arena/net, and how player
+ * contact changes its velocity.
+ */
 #include "ball.h"
 
 #define BALL_RADIUS 20
@@ -22,32 +29,33 @@ int ball_update(Ball *b) {
     b->x += b->vx;
     b->y += b->vy;
 
-    // 1. Left wall collision
+    /* Arena bounds are resolved before scoring so the ball stays on screen. */
     if (b->x - BALL_RADIUS < 0) {
         b->x = BALL_RADIUS;
         b->vx = -b->vx * BALL_BOUNCE;
     }
 
-    // 2. Right wall collision
     if (b->x + BALL_RADIUS > H_RES) {
         b->x = H_RES - BALL_RADIUS;
         b->vx = -b->vx * BALL_BOUNCE;
     }
 
-    // 3. Ceiling collision
     if (b->y - BALL_RADIUS < 0) {
         b->y = BALL_RADIUS;
         b->vy = -b->vy * BALL_BOUNCE;
     }
 
-    // 5. Net collision (Circle vs AABB with top/side differentiation)
+    /*
+     * Net collision uses circle-vs-AABB. The closest point gives both the
+     * collision test and the push-out normal; top hits are handled separately so
+     * the ball can rest/bounce on the net instead of being reflected sideways.
+     */
     int net_width = 10;
     float net_top = FLOOR_Y - NET_HEIGHT;
     float net_bottom = FLOOR_Y;
     float net_left = NET_X - net_width / 2.0f;
     float net_right = NET_X + net_width / 2.0f;
 
-    // Find the closest point on the net rectangle to the ball center
     float closest_x = b->x;
     float closest_y = b->y;
     if (closest_x < net_left)   closest_x = net_left;
@@ -61,21 +69,20 @@ int ball_update(Ball *b) {
     float radius_sq = (float)BALL_RADIUS * BALL_RADIUS;
 
     if (dist_sq < radius_sq && dist_sq > 0.0f) {
-        // Determine if the ball hit the top or the side of the net.
-        // Top collision: the ball was above the net top edge before impact.
         bool is_top_collision = (b->y - BALL_RADIUS) <= net_top &&
                                 b->x >= net_left - BALL_RADIUS &&
                                 b->x <= net_right + BALL_RADIUS;
 
         if (is_top_collision) {
-            // Clamp the ball to sit exactly on top of the net
             b->y = net_top - BALL_RADIUS;
-            // Small upward bounce so the ball doesn't get stuck
             b->vy = -3.0f;
-            // Dampen forward momentum slightly — ball continues in its direction
+            /* Preserve direction while reducing speed to avoid repeated overlap. */
             b->vx *= 0.8f;
         } else {
-            // Side collision: push ball out and reverse horizontal velocity
+            /*
+             * Fast inverse square root approximates 1/sqrt(dist_sq), which is
+             * enough here to normalize the push-out vector without libm.
+             */
             float x2 = dist_sq * 0.5f;
             int i = *(int*)&dist_sq;
             i = 0x5f3759df - (i >> 1);
@@ -89,12 +96,11 @@ int ball_update(Ball *b) {
             b->x += nx * overlap;
             b->y += ny * overlap;
 
-            // Reverse horizontal velocity and apply bounce
             b->vx = -b->vx * BALL_BOUNCE;
         }
     }
 
-    // 6. Scoring detection
+    /* Touching the floor ends the rally; the x-position tells which side lost. */
     if (b->y + BALL_RADIUS >= FLOOR_Y) {
         if (b->x < NET_X) {
             return -1;
@@ -108,12 +114,16 @@ int ball_update(Ball *b) {
 }
 
 void ball_collide_with_player(Ball *b, const Player *p, int direction) {
+    /*
+     * Player collision is also circle-vs-AABB. The resolution step first moves
+     * the ball out of the player hitbox, then computes a volley direction from
+     * where the ball contacted the player's body.
+     */
     float p_left = p->x - PLAYER_WIDTH / 2.0f;
     float p_right = p->x + PLAYER_WIDTH / 2.0f;
     float p_top = p->y - PLAYER_HEIGHT / 2.0f;
     float p_bottom = p->y + PLAYER_HEIGHT / 2.0f;
 
-    // Find the closest point on the player rectangle to the ball center
     float closest_x = b->x;
     float closest_y = b->y;
     if (closest_x < p_left)   closest_x = p_left;
@@ -127,9 +137,7 @@ void ball_collide_with_player(Ball *b, const Player *p, int direction) {
     float radius_sq = (float)BALL_RADIUS * BALL_RADIUS;
 
     if (dist_sq < radius_sq) {
-        // Push ball outside player along penetration vector
         if (dist_sq > 0.0f) {
-            // Ball center is outside the rectangle — use the collision normal
             float x2 = dist_sq * 0.5f;
             int i = *(int*)&dist_sq;
             i = 0x5f3759df - (i >> 1);
@@ -141,7 +149,7 @@ void ball_collide_with_player(Ball *b, const Player *p, int direction) {
             b->x += dx * inv_dist * overlap;
             b->y += dy * inv_dist * overlap;
         } else {
-            // Ball center is inside the rectangle — fallback to axis-aligned push-out
+            /* Degenerate overlap: choose the shallowest axis to escape cleanly. */
             float overlap_left = b->x - p_left + BALL_RADIUS;
             float overlap_right = p_right - b->x + BALL_RADIUS;
             float overlap_top = b->y - p_top + BALL_RADIUS;
@@ -160,29 +168,27 @@ void ball_collide_with_player(Ball *b, const Player *p, int direction) {
             else if (side == 3) b->y = p_bottom + BALL_RADIUS;
         }
 
-        // Determine rebound direction from relative position
-        // Positive offset = ball is to the right of the player center
-        // Negative offset = ball is to the left
+        /*
+         * Hits near the center produce a safer vertical bounce; edge hits produce
+         * stronger horizontal velocity, making shot placement controllable.
+         */
         float offset = b->x - p->x;
         float half_w = PLAYER_WIDTH / 2.0f;
 
-        // Normalize offset to [-1, 1] range
         float norm = offset / half_w;
         if (norm > 1.0f)  norm = 1.0f;
         if (norm < -1.0f) norm = -1.0f;
 
-        // Directional horizontal impulse based on where the ball hit
-        // Base speed range: 2 (center hit) to 8 (edge hit)
         float base_speed = 2.0f + 6.0f * (norm < 0 ? -norm : norm);
         b->vx = (norm >= 0 ? 1.0f : -1.0f) * base_speed;
         b->vy = -12.0f;
 
-        // Momentum transfer from player movement
+        /* Add part of the player's movement so jumping/running affects volleys. */
         float momentum_weight = 0.5f;
         b->vx += p->vx * momentum_weight;
         b->vy += p->vy * momentum_weight;
 
-        // Clamp velocities to keep physics stable
+        /* Clamp velocities to keep physics stable and avoid tunneling. */
         float max_vx = 15.0f;
         float max_vy = 15.0f;
 

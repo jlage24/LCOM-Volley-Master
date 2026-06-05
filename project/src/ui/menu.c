@@ -1,3 +1,9 @@
+/*
+ * Static menu and field screen drawing.
+ *
+ * Menu navigation, hit testing and state transitions live in game.c. This module
+ * only composes the background and button assets for each menu-like state.
+ */
 #include "menu.h"
 #include "assets.h"
 #include <string.h>
@@ -6,6 +12,7 @@ extern char *back_buffer;
 
 void draw_main_menu() {
 
+    /* The main menu layout matches the hitboxes defined in game.c. */
     draw_xpm(menu_pixmap, 0, 0);
 
     int pos_x = 80; 
@@ -23,6 +30,7 @@ void draw_main_menu() {
 
 void draw_pause_menu() {
     
+    /* Pause reuses the main menu button positions for consistent navigation. */
     draw_xpm(menu_pause_pixmap, 0, 0);
 
     int pos_x = 80; 
@@ -42,15 +50,18 @@ void draw_field_select_menu() {
 }
 
 void draw_end_screen(int winner) {
-    int pos_x = 80;
-    int pos_y_play_again = 380;
-    int pos_y_menu = 460;
-
     if (winner == 1) {
         draw_xpm(player1_wins_pixmap, 0, 0);
     } else if (winner == 2) {
         draw_xpm(player2_wins_pixmap, 0, 0);
     }
+}
+
+void draw_end_menu_buttons() {
+    /* End-screen buttons share the standard menu hitbox positions. */
+    int pos_x = 80;
+    int pos_y_play_again = 380;
+    int pos_y_menu = 460;
 
     draw_xpm(btn_playAgain_pixmap, pos_x, pos_y_play_again);
     draw_xpm(btn_menu_pixmap, pos_x, pos_y_menu);

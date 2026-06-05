@@ -1,3 +1,11 @@
+/*
+ * Central game state machine.
+ *
+ * This module owns match state, menu state, scores, timers, selections and the
+ * active gameplay objects. Device modules provide normalized keyboard/mouse
+ * input, the physics modules update players and ball, and the UI modules draw
+ * the current state selected here.
+ */
 #include "game.h"
 #include "player.h"
 #include "ball.h"
@@ -109,6 +117,7 @@ static void update_rtc_cache(void) {
         return;
     }
 
+    /* The RTC is only visible on menus, so refresh it at 1 Hz on the 60 Hz loop. */
     rtc_update_ticks++;
     if (rtc_update_ticks >= RTC_REFRESH_TICKS) {
         rtc_update_ticks = 0;
@@ -117,6 +126,7 @@ static void update_rtc_cache(void) {
 }
 
 static void reset_round(int ball_direction) {
+    /* A new rally resets positions but keeps match-level score and time. */
     ball_init(&g_ball, ball_direction);
 
     player_init(&g_player1, 220.0f);
@@ -124,6 +134,7 @@ static void reset_round(int ball_direction) {
 }
 
 static void reset_match(void) {
+    /* Full match reset used before a new game or replay. */
     score_p1 = 0;
     score_p2 = 0;
     game_seconds_left = GAME_TIME_SECONDS;
@@ -191,6 +202,7 @@ static void move_character_selection(const KeyboardState *kb) {
         return;
     }
 
+    /* Player 2 cannot select the character already locked by Player 1. */
     do {
         character_selected_index =
             (character_selected_index + PLAYER_CHARACTER_COUNT + direction) %
@@ -221,6 +233,7 @@ static int button_at_point(int x, int y) {
 static int sync_button_selection_from_mouse(int *selected) {
     int hovered_button = button_at_point(cursor_x, cursor_y);
 
+    /* Mouse hover and keyboard selection share the same selected index. */
     if (hovered_button >= 0) {
         *selected = hovered_button;
     }
@@ -247,6 +260,7 @@ static void draw_selected_menu_button(int selected) {
 }
 
 static void choose_current_character(void) {
+    /* Character selection is a two-step flow: lock P1, then lock a distinct P2. */
     if (!choosing_player2) {
         selected_player1 = character_selected_index;
         selected_player2 = -1;
@@ -284,6 +298,7 @@ static int first_available_character(int unavailable_character) {
 }
 
 static void start_match_from_selection(void) {
+    /* Defensive defaults keep the transition valid even if selection is skipped. */
     if (selected_player1 < 0) selected_player1 = 0;
     if (selected_player2 < 0 || selected_player2 == selected_player1) {
         selected_player2 = first_available_character(selected_player1);
@@ -301,6 +316,7 @@ static void start_match_from_field_selection(void) {
 }
 
 static int countdown_display_value(void) {
+    /* Countdown is timer-tick based, so it stays synchronized with game updates. */
     if (countdown_ticks < COUNTDOWN_NUMBER_TICKS) {
         return 3;
     }
@@ -321,6 +337,7 @@ static void finish_match(int winning_player) {
 }
 
 static void update_game_timer(void) {
+    /* Game time is derived from the 60 Hz timer interrupt, not wall-clock time. */
     timer_frame_count++;
 
     if (timer_frame_count < 60) {
@@ -340,6 +357,7 @@ static void update_game_timer(void) {
 
     if (game_seconds_left == 0) {
         if (score_p1 == score_p2) {
+            /* Tied matches enter sudden death: the next scored point wins. */
             sudden_death = true;
             sudden_death_seconds = 0;
             timer_frame_count = 0;
@@ -391,10 +409,16 @@ int game_update(void) {
     const KeyboardState *kb = get_keyboard_state();
     bool mouse_clicked = mouse_state.left_button && !mouse_button_was_down;
 
+    /*
+     * One call represents one timer frame. Inputs are already collected by the
+     * interrupt handlers; this function consumes their current snapshot and
+     * advances exactly one state-machine step.
+     */
     update_menu_cursor();
     update_rtc_cache();
 
     if (current_state == STATE_MENU) {
+        /* Main menu accepts keyboard navigation and mouse hover/clicks. */
         int hovered_button = sync_button_selection_from_mouse(&main_menu_selected);
         move_vertical_selection(&main_menu_selected, 3, kb);
 
@@ -431,6 +455,7 @@ int game_update(void) {
     }
 
     else if (current_state == STATE_CHARACTER_SELECT) {
+        /* Selection can be driven by cards under the cursor or by A/D keys. */
         int hovered_character = character_at_point(cursor_x, cursor_y);
 
         if (hovered_character >= 0 &&
@@ -458,6 +483,7 @@ int game_update(void) {
     }
 
     else if (current_state == STATE_FIELD_SELECT) {
+        /* Field choice mirrors character choice but allows all fields. */
         t_field_type hovered_field = field_at_point(cursor_x, cursor_y);
 
         if (hovered_field < FIELD_COUNT) {
@@ -490,6 +516,7 @@ int game_update(void) {
             return finish_update(0);
         }
 
+        /* The match is frozen while the countdown animation runs. */
         countdown_ticks++;
 
         if (countdown_ticks >= (COUNTDOWN_NUMBER_TICKS * 3) + COUNTDOWN_START_TICKS) {
@@ -498,6 +525,7 @@ int game_update(void) {
     }
 
     else if (current_state == STATE_PLAYING) {
+        /* Active gameplay: timer, players, ball physics, collisions and scoring. */
         if (kb->pause) {
             pause_menu_selected = 0;
             current_state = STATE_PAUSED;
@@ -528,6 +556,11 @@ int game_update(void) {
         );
 
         if (point != 0) {
+            /*
+             * ball_update reports the side where the ball touched the floor.
+             * A hit on the left side awards Player 2, a hit on the right side
+             * awards Player 1.
+             */
             if (point == 1) {
                 score_p1++;
                 if (sudden_death || score_p1 >= WIN_SCORE) {
@@ -547,6 +580,7 @@ int game_update(void) {
     }
 
     else if (current_state == STATE_PAUSED) {
+        /* Pause keeps the rally visible underneath the menu overlay. */
         int hovered_button = sync_button_selection_from_mouse(&pause_menu_selected);
         move_vertical_selection(&pause_menu_selected, 3, kb);
 
@@ -562,7 +596,7 @@ int game_update(void) {
         }
 
         if (kb->pause) {
-            current_state = STATE_MENU;
+            current_state = STATE_PLAYING;
         }
 
         if (current_state == STATE_PAUSED && mouse_clicked && hovered_button >= 0) {
@@ -580,6 +614,7 @@ int game_update(void) {
     }
 
     else if (current_state == STATE_END) {
+        /* End screen either reuses current selections for replay or returns home. */
         int hovered_button = sync_button_selection_from_mouse(&end_menu_selected);
         move_vertical_selection(&end_menu_selected, 2, kb);
 
@@ -621,6 +656,10 @@ int game_update(void) {
 }
 
 void game_render(void) {
+    /*
+     * Rendering is selected from the same state machine as updates. Each branch
+     * draws a full frame into the back buffer and flushes once at the end.
+     */
     if (current_state == STATE_MENU) {
         draw_main_menu();
         if (rtc_valid) {
@@ -685,7 +724,8 @@ void game_render(void) {
 
     else if (current_state == STATE_END) {
         draw_end_screen(winner);
-        video_draw_end_overlay(score_p1, score_p2);
+        video_draw_final_score(score_p1, score_p2);
+        draw_end_menu_buttons();
         draw_selected_menu_button(end_menu_selected);
         video_draw_cursor(cursor_x, cursor_y);
     }

@@ -1,3 +1,10 @@
+/*
+ * Global asset loader.
+ *
+ * This module converts bundled XPM maps into xpm_image_t objects used by the
+ * rendering and menu modules. It also owns the globally selected player sprite
+ * pointers, which game.c updates after character selection.
+ */
 #include "assets.h"
 
 #include "../images/menus/menu.xpm"
@@ -66,6 +73,7 @@ static int load_xpm_asset(xpm_map_t xpm, xpm_image_t *img) {
 }
 
 static void free_xpm_asset(xpm_image_t *img) {
+    /* xpm_load allocates the byte buffer; width/height can remain as metadata. */
     if (img->bytes != NULL) {
         free(img->bytes);
         img->bytes = NULL;
@@ -73,6 +81,10 @@ static void free_xpm_asset(xpm_image_t *img) {
 }
 
 int load_all_assets() {
+    /*
+     * Assets are loaded once during startup before the game loop begins. Menu,
+     * button, player and ball assets fail fast so startup can abort cleanly.
+     */
     if (load_xpm_asset((xpm_map_t) menu, &menu_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) menu_pause, &menu_pause_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) menu_players, &character_select_pixmap)) return 1;
@@ -102,12 +114,14 @@ int load_all_assets() {
 
     if (load_xpm_asset((xpm_map_t) ball_xpm, &ball_pixmap)) return 1;
 
+    /* Field backgrounds live in a separate translation unit to keep this file smaller. */
     load_field_assets();
 
     return 0;
 }
 
 void free_all_assets() {
+    /* Free every loaded XPM buffer before leaving graphics mode. */
     free_xpm_asset(&menu_pixmap);
     free_xpm_asset(&menu_pause_pixmap);
     free_xpm_asset(&character_select_pixmap);
