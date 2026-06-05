@@ -16,11 +16,12 @@
 #define FIELD_CARD_Y 388
 #define FIELD_CARD_W 190
 #define FIELD_CARD_H 205
+#define COUNTDOWN_NUMBER_TICKS 60
+#define COUNTDOWN_START_TICKS 45
 
 /* Global game state */
 GameState current_state = STATE_MENU;
 t_field_type selected_field = FIELD_JUNGLE;
-static t_winner match_winner = WINNER_NONE;
 
 /* Internal game objects */
 static Ball g_ball;
@@ -31,6 +32,8 @@ static int score_p2 = 0;
 static int game_seconds_left = GAME_TIME_SECONDS;
 static int sudden_death_seconds = 0;
 static int timer_frame_count = 0;
+static int countdown_ticks = 0;
+static int winner = 0;
 static int cursor_x = H_RES / 2;
 static int cursor_y = V_RES / 2;
 static bool mouse_button_was_down = false;
@@ -78,8 +81,9 @@ static void reset_match(void) {
     game_seconds_left = GAME_TIME_SECONDS;
     sudden_death_seconds = 0;
     timer_frame_count = 0;
+    countdown_ticks = 0;
     sudden_death = false;
-    match_winner = WINNER_NONE;
+    winner = 0;
     reset_round(1);
 }
 
@@ -138,27 +142,26 @@ static void start_match_from_selection(void) {
 
 static void start_match_from_field_selection(void) {
     reset_match();
-    current_state = STATE_PLAYING;
+    current_state = STATE_COUNTDOWN;
 }
 
-static t_winner winner_from_score(void) {
-    if (score_p1 > score_p2) {
-        return WINNER_PLAYER1;
+static int countdown_display_value(void) {
+    if (countdown_ticks < COUNTDOWN_NUMBER_TICKS) {
+        return 3;
+    }
+    if (countdown_ticks < COUNTDOWN_NUMBER_TICKS * 2) {
+        return 2;
+    }
+    if (countdown_ticks < COUNTDOWN_NUMBER_TICKS * 3) {
+        return 1;
     }
 
-    return WINNER_PLAYER2;
+    return 0;
 }
 
-static void finish_match(void) {
-    match_winner = winner_from_score();
+static void finish_match(int winning_player) {
+    winner = winning_player;
     current_state = STATE_END;
-}
-
-static void check_win_after_point(void) {
-    if (sudden_death) {
-        finish_match();
-        return;
-    }
 }
 
 static void update_game_timer(void) {
@@ -185,7 +188,7 @@ static void update_game_timer(void) {
             sudden_death_seconds = 0;
             timer_frame_count = 0;
         } else {
-            finish_match();
+            finish_match(score_p1 > score_p2 ? 1 : 2);
         }
     }
 }
@@ -198,12 +201,13 @@ void game_init(void) {
     game_seconds_left = GAME_TIME_SECONDS;
     sudden_death_seconds = 0;
     timer_frame_count = 0;
+    countdown_ticks = 0;
     cursor_x = H_RES / 2;
     cursor_y = V_RES / 2;
     mouse_button_was_down = false;
     should_exit = false;
     sudden_death = false;
-    match_winner = WINNER_NONE;
+    winner = 0;
     selected_player1 = -1;
     selected_player2 = -1;
     selected_field = FIELD_JUNGLE;
@@ -290,6 +294,19 @@ int game_update(void) {
         }
     }
 
+    else if (current_state == STATE_COUNTDOWN) {
+        if (kb->pause) {
+            current_state = STATE_FIELD_SELECT;
+            return finish_update(0);
+        }
+
+        countdown_ticks++;
+
+        if (countdown_ticks >= (COUNTDOWN_NUMBER_TICKS * 3) + COUNTDOWN_START_TICKS) {
+            current_state = STATE_PLAYING;
+        }
+    }
+
     else if (current_state == STATE_PLAYING) {
         if (kb->pause) {
             current_state = STATE_PAUSED;
@@ -322,12 +339,19 @@ int game_update(void) {
         if (point != 0) {
             if (point == 1) {
                 score_p1++;
-                reset_round(-1);
+                if (sudden_death || score_p1 >= WIN_SCORE) {
+                    finish_match(1);
+                } else {
+                    reset_round(-1);
+                }
             } else if (point == -1) {
                 score_p2++;
-                reset_round(1);
+                if (sudden_death || score_p2 >= WIN_SCORE) {
+                    finish_match(2);
+                } else {
+                    reset_round(1);
+                }
             }
-            check_win_after_point();
         }
     }
 
@@ -356,12 +380,29 @@ int game_update(void) {
 
     else if (current_state == STATE_END) {
         if (kb->enter) {
-            game_init();
+            reset_match();
+            current_state = STATE_COUNTDOWN;
         }
 
         if (kb->pause) {
-            should_exit = true;
-            return finish_update(1);
+            reset_match();
+            current_state = STATE_MENU;
+            return finish_update(0);
+        }
+
+        if (mouse_clicked) {
+            if (point_inside_rect(cursor_x, cursor_y,
+                                  MENU_BUTTON_X, MENU_EXIT_Y,
+                                  MENU_BUTTON_W, MENU_BUTTON_H)) {
+                reset_match();
+                current_state = STATE_MENU;
+            }
+            else if (point_inside_rect(cursor_x, cursor_y,
+                                       MENU_BUTTON_X, MENU_START_Y,
+                                       MENU_BUTTON_W, MENU_BUTTON_H)) {
+                reset_match();
+                current_state = STATE_COUNTDOWN;
+            }
         }
     }
 
@@ -382,6 +423,15 @@ void game_render(void) {
     else if (current_state == STATE_FIELD_SELECT) {
         draw_field_select_menu();
         video_draw_cursor(cursor_x, cursor_y);
+    }
+
+    else if (current_state == STATE_COUNTDOWN) {
+        draw_field(selected_field);
+        video_draw_hud(score_p1, score_p2, game_seconds_left);
+        video_draw_net();
+        video_draw_ball(&g_ball);
+        video_draw_players(&g_player1, &g_player2);
+        video_draw_countdown(countdown_display_value());
     }
 
     else if (current_state == STATE_PLAYING) {
@@ -408,7 +458,9 @@ void game_render(void) {
     }
 
     else if (current_state == STATE_END) {
-        draw_end_screen(match_winner);
+        draw_end_screen(winner);
+        video_draw_end_overlay(score_p1, score_p2);
+        video_draw_cursor(cursor_x, cursor_y);
     }
 
     video_flush();
