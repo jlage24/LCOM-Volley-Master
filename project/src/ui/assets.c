@@ -6,6 +6,7 @@
 #include "../images/menus/menu_fields.xpm"
 #include "../images/menus/player1_wins.xpm"
 #include "../images/menus/player2_wins.xpm"
+#include "../images/menus/menu_howToPlay.xpm"
 
 
 #include "../images/buttons/btn_start.xpm"
@@ -13,6 +14,7 @@
 #include "../images/buttons/btn_resume.xpm"
 #include "../images/buttons/btn_menu.xpm"
 #include "../images/buttons/btn_playAgain.xpm"
+#include "../images/buttons/btn_howToPlay.xpm"
 
 #include "../images/players/locked_character.xpm"
 #include "../images/players/eagle.xpm"
@@ -43,6 +45,8 @@ xpm_image_t btn_exit_pixmap;
 xpm_image_t btn_resume_pixmap;
 xpm_image_t btn_menu_pixmap;
 xpm_image_t btn_playAgain_pixmap;
+xpm_image_t btn_howToPlay_pixmap;
+xpm_image_t menu_howToPlay_pixmap;
 
 xpm_image_t player_pixmaps[PLAYER_CHARACTER_COUNT];
 xpm_image_t *player1_pixmap = &player_pixmaps[0];
@@ -83,6 +87,8 @@ int load_all_assets() {
     if (load_xpm_asset((xpm_map_t) btn_resume, &btn_resume_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) btn_menu, &btn_menu_pixmap)) return 1;
     if (load_xpm_asset((xpm_map_t) btn_playAgain, &btn_playAgain_pixmap)) return 1;
+    if (load_xpm_asset((xpm_map_t) btn_howToPlay_xpm, &btn_howToPlay_pixmap)) return 1;
+    if (load_xpm_asset((xpm_map_t) menu_howToPlay_xpm, &menu_howToPlay_pixmap)) return 1;
 
     if (load_xpm_asset((xpm_map_t) eagle_xpm, &player_pixmaps[0])) return 1;
     if (load_xpm_asset((xpm_map_t) panda_xpm, &player_pixmaps[1])) return 1;
@@ -118,6 +124,8 @@ void free_all_assets() {
     free_xpm_asset(&btn_resume_pixmap);
     free_xpm_asset(&btn_menu_pixmap);
     free_xpm_asset(&btn_playAgain_pixmap);
+    free_xpm_asset(&btn_howToPlay_pixmap);
+    free_xpm_asset(&menu_howToPlay_pixmap);
     for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
         free_xpm_asset(&player_pixmaps[i]);
     }

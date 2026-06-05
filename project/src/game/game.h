@@ -25,7 +25,8 @@ typedef enum {
     STATE_COUNTDOWN,
     STATE_PLAYING,
     STATE_PAUSED,
-    STATE_END
+    STATE_END,
+    STATE_HOW_TO_PLAY
 } GameState;
 
 extern GameState current_state;

@@ -14,6 +14,10 @@ void draw_main_menu() {
     
     draw_xpm(btn_start_pixmap, pos_x, pos_y_start);
     draw_xpm(btn_exit_pixmap, pos_x, pos_y_exit);
+
+    int htp_x = H_RES - btn_howToPlay_pixmap.width - 20;
+    int htp_y = V_RES - btn_howToPlay_pixmap.height - 20;
+    draw_xpm(btn_howToPlay_pixmap, htp_x, htp_y);
 }
 
 
@@ -27,6 +31,10 @@ void draw_pause_menu() {
     
     draw_xpm(btn_resume_pixmap, pos_x, pos_y_start);
     draw_xpm(btn_menu_pixmap, pos_x, pos_y_exit);
+
+    int htp_x = H_RES - btn_howToPlay_pixmap.width - 20;
+    int htp_y = V_RES - btn_howToPlay_pixmap.height - 20;
+    draw_xpm(btn_howToPlay_pixmap, htp_x, htp_y);
 }
 
 void draw_field_select_menu() {
@@ -66,6 +74,6 @@ void draw_field(t_field_type field) {
     }
 }
 
-
-
-
+void draw_how_to_play_screen() {
+    draw_xpm(menu_howToPlay_pixmap, 0, 0);
+}

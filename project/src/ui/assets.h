@@ -22,6 +22,8 @@ extern xpm_image_t btn_exit_pixmap;
 extern xpm_image_t btn_resume_pixmap;
 extern xpm_image_t btn_menu_pixmap;
 extern xpm_image_t btn_playAgain_pixmap;
+extern xpm_image_t btn_howToPlay_pixmap;
+extern xpm_image_t menu_howToPlay_pixmap;
 extern xpm_image_t player_pixmaps[PLAYER_CHARACTER_COUNT];
 extern xpm_image_t *player1_pixmap;
 extern xpm_image_t *player2_pixmap;

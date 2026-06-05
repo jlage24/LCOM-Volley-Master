@@ -12,6 +12,11 @@
 #define MENU_BUTTON_X 80
 #define MENU_START_Y 380
 #define MENU_EXIT_Y 460
+#define MENU_HTP_PADDING 20
+#define MENU_HTP_W 64
+#define MENU_HTP_H 64
+#define MENU_HTP_X (H_RES - MENU_HTP_W - MENU_HTP_PADDING)
+#define MENU_HTP_Y (V_RES - MENU_HTP_H - MENU_HTP_PADDING)
 #define MENU_BUTTON_W 300
 #define MENU_BUTTON_H 130
 #define MENU_BUTTON_SELECT_X_OFFSET 13
@@ -50,6 +55,7 @@ static int selected_player2 = -1;
 static bool choosing_player2 = false;
 static int main_menu_selected = 0;
 static int pause_menu_selected = 0;
+static GameState how_to_play_origin = STATE_MENU;
 static int character_selected_index = 0;
 static int field_selected_index = FIELD_JUNGLE;
 static int end_menu_selected = 0;
@@ -87,7 +93,8 @@ static bool state_shows_menu(GameState state) {
            state == STATE_CHARACTER_SELECT ||
            state == STATE_FIELD_SELECT ||
            state == STATE_PAUSED ||
-           state == STATE_END;
+           state == STATE_END ||
+           state == STATE_HOW_TO_PLAY;
 }
 
 static void refresh_rtc_cache(void) {
@@ -193,6 +200,11 @@ static void move_character_selection(const KeyboardState *kb) {
 
 static int button_at_point(int x, int y) {
     if (point_inside_rect(x, y,
+                          MENU_HTP_X, MENU_HTP_Y,
+                          MENU_HTP_W, MENU_HTP_H)) {
+        return 2;
+    }
+    if (point_inside_rect(x, y,
                           MENU_BUTTON_X, MENU_EXIT_Y,
                           MENU_BUTTON_W, MENU_BUTTON_H)) {
         return 1;
@@ -216,12 +228,22 @@ static int sync_button_selection_from_mouse(int *selected) {
     return hovered_button;
 }
 
+static int menu_button_y(int selected) {
+    if (selected == 0) return MENU_START_Y;
+    return MENU_EXIT_Y;
+}
+
 static void draw_selected_menu_button(int selected) {
-    video_draw_selection_box(MENU_BUTTON_X + MENU_BUTTON_SELECT_X_OFFSET,
-                             (selected == 0 ? MENU_START_Y : MENU_EXIT_Y) +
-                             MENU_BUTTON_SELECT_Y_OFFSET,
-                             MENU_BUTTON_SELECT_W,
-                             MENU_BUTTON_SELECT_H);
+    if (selected == 2) {
+        video_draw_selection_box(MENU_HTP_X - 4, MENU_HTP_Y - 4,
+                                 MENU_HTP_W + 8, MENU_HTP_H + 8);
+    } else {
+        video_draw_selection_box(MENU_BUTTON_X + MENU_BUTTON_SELECT_X_OFFSET,
+                                 menu_button_y(selected) +
+                                 MENU_BUTTON_SELECT_Y_OFFSET,
+                                 MENU_BUTTON_SELECT_W,
+                                 MENU_BUTTON_SELECT_H);
+    }
 }
 
 static void choose_current_character(void) {
@@ -347,6 +369,7 @@ void game_init(void) {
     selected_field = FIELD_JUNGLE;
     main_menu_selected = 0;
     pause_menu_selected = 0;
+    how_to_play_origin = STATE_MENU;
     character_selected_index = 0;
     field_selected_index = FIELD_JUNGLE;
     end_menu_selected = 0;
@@ -373,14 +396,17 @@ int game_update(void) {
 
     if (current_state == STATE_MENU) {
         int hovered_button = sync_button_selection_from_mouse(&main_menu_selected);
-        move_vertical_selection(&main_menu_selected, 2, kb);
+        move_vertical_selection(&main_menu_selected, 3, kb);
 
         if (kb->enter) {
             if (main_menu_selected == 0) {
                 open_character_select();
-            } else {
+            } else if (main_menu_selected == 1) {
                 should_exit = true;
                 return finish_update(1);
+            } else if (main_menu_selected == 2) {
+                how_to_play_origin = STATE_MENU;
+                current_state = STATE_HOW_TO_PLAY;
             }
         }
 
@@ -396,6 +422,10 @@ int game_update(void) {
             }
             else if (main_menu_selected == 0) {
                 open_character_select();
+            }
+            else if (main_menu_selected == 2) {
+                how_to_play_origin = STATE_MENU;
+                current_state = STATE_HOW_TO_PLAY;
             }
         }
     }
@@ -518,13 +548,16 @@ int game_update(void) {
 
     else if (current_state == STATE_PAUSED) {
         int hovered_button = sync_button_selection_from_mouse(&pause_menu_selected);
-        move_vertical_selection(&pause_menu_selected, 2, kb);
+        move_vertical_selection(&pause_menu_selected, 3, kb);
 
         if (kb->enter) {
             if (pause_menu_selected == 0) {
                 current_state = STATE_PLAYING;
-            } else {
+            } else if (pause_menu_selected == 1) {
                 current_state = STATE_MENU;
+            } else if (pause_menu_selected == 2) {
+                how_to_play_origin = STATE_PAUSED;
+                current_state = STATE_HOW_TO_PLAY;
             }
         }
 
@@ -538,6 +571,10 @@ int game_update(void) {
             }
             else if (pause_menu_selected == 0) {
                 current_state = STATE_PLAYING;
+            }
+            else if (pause_menu_selected == 2) {
+                how_to_play_origin = STATE_PAUSED;
+                current_state = STATE_HOW_TO_PLAY;
             }
         }
     }
@@ -571,6 +608,12 @@ int game_update(void) {
                 reset_match();
                 current_state = STATE_COUNTDOWN;
             }
+        }
+    }
+
+    else if (current_state == STATE_HOW_TO_PLAY) {
+        if (kb->pause || kb->enter) {
+            current_state = how_to_play_origin;
         }
     }
 
@@ -632,6 +675,11 @@ void game_render(void) {
 
         draw_pause_menu();
         draw_selected_menu_button(pause_menu_selected);
+        video_draw_cursor(cursor_x, cursor_y);
+    }
+
+    else if (current_state == STATE_HOW_TO_PLAY) {
+        draw_how_to_play_screen();
         video_draw_cursor(cursor_x, cursor_y);
     }
 
