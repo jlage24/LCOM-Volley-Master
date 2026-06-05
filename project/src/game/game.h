@@ -9,6 +9,7 @@
 #define FLOOR_Y     680
 #define NET_X       512
 #define NET_HEIGHT  300
+#define WIN_SCORE   5
 #define GAME_TIME_SECONDS 60
 #define GRAVITY     0.2f
 
@@ -21,6 +22,7 @@ typedef enum {
     STATE_MENU,
     STATE_CHARACTER_SELECT,
     STATE_FIELD_SELECT,
+    STATE_COUNTDOWN,
     STATE_PLAYING,
     STATE_PAUSED,
     STATE_END

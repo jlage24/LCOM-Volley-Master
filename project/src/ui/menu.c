@@ -33,12 +33,19 @@ void draw_field_select_menu() {
     draw_xpm(field_select_pixmap, 0, 0);
 }
 
-void draw_end_screen(t_winner winner) {
-    if (winner == WINNER_PLAYER1) {
+void draw_end_screen(int winner) {
+    int pos_x = 80;
+    int pos_y_play_again = 380;
+    int pos_y_menu = 460;
+
+    if (winner == 1) {
         draw_xpm(player1_wins_pixmap, 0, 0);
-    } else if (winner == WINNER_PLAYER2) {
+    } else if (winner == 2) {
         draw_xpm(player2_wins_pixmap, 0, 0);
     }
+
+    draw_xpm(btn_playAgain_pixmap, pos_x, pos_y_play_again);
+    draw_xpm(btn_menu_pixmap, pos_x, pos_y_menu);
 }
 
 void draw_field(t_field_type field) {
@@ -58,7 +65,6 @@ void draw_field(t_field_type field) {
             break;
     }
 }
-
 
 
 

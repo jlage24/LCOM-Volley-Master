@@ -9,6 +9,7 @@
 #define SCANCODE_A      0x1E
 #define SCANCODE_D      0x20
 #define SCANCODE_W      0x11
+#define SCANCODE_S      0x1F
 #define SCANCODE_ESC    0x01
 #define SCANCODE_ENTER  0x1C
 
@@ -18,6 +19,10 @@ typedef struct {
     bool jump;
     bool pause;
     bool enter;
+    bool up;
+    bool down;
+    bool left;
+    bool right;
 } KeyboardState;
 
 /* Called on each keyboard interrupt. */

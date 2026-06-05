@@ -24,23 +24,23 @@ static uint32_t tick_count = 0;
 
 static int timer_init_60hz(void) {
     if (timer_set_frequency(0, 60) != 0) {
-        printf("[TIMER] Erro: nao foi possivel configurar 60 Hz\n");
+        printf("[TIMER] Error: could not configure 60 Hz\n");
         return 1;
     }
 
     if (timer_subscribe_int(&timer_irq_set) != 0) {
-        printf("[TIMER] Erro: nao foi possivel subscrever IRQ do timer\n");
+        printf("[TIMER] Error: could not subscribe timer IRQ\n");
         return 1;
     }
 
-    printf("[TIMER] Timer 0 configurado a 60 Hz (irq_set = 0x%02X)\n",
+    printf("[TIMER] Timer 0 configured to 60 Hz (irq_set = 0x%02X)\n",
            timer_irq_set);
     return 0;
 }
 
 static void timer_cleanup(void) {
     if (timer_unsubscribe_int() != 0)
-        printf("[TIMER] Aviso: erro ao cancelar subscricao do timer\n");
+        printf("[TIMER] Warning: error while unsubscribing timer\n");
 }
 
 int (proj_main_loop)(int argc, char *argv[]) {
@@ -81,13 +81,24 @@ int (proj_main_loop)(int argc, char *argv[]) {
         return 1;
     }
 
+    if (mouse_write_cmd(MOUSE_ENABLE_DATA) != 0) {
+        printf("[MOUSE] Error: could not enable data reporting\n");
+        mouse_unsubscribe_int();
+        kbd_unsubscribe_int();
+        timer_cleanup();
+        free_all_assets();
+        video_free_back_buffer();
+        vg_exit();
+        return 1;
+    }
+
     int running  = 1;
     int ipc_status;
     message msg;
 
     while (running) {
         if (driver_receive(ANY, &msg, &ipc_status) != 0) {
-            printf("[LOOP] Erro em driver_receive\n");
+            printf("[LOOP] Error in driver_receive\n");
             continue;
         }
 
@@ -131,14 +142,17 @@ int (proj_main_loop)(int argc, char *argv[]) {
         }
     }
 
-    timer_cleanup();
+    mouse_write_cmd(MOUSE_DISABLE_DATA);
+    mouse_unsubscribe_int();
+
     kbd_unsubscribe_int();
-    
+    timer_cleanup();
+
     free_all_assets();
-    video_free_back_buffer(); 
+    video_free_back_buffer();
     vg_exit();
 
-    printf("[EXIT] Ticks totais: %u  (~%.1f segundos)\n",
+    printf("[EXIT] Total ticks: %u  (~%.1f seconds)\n",
            tick_count, (float)tick_count / 60.0f);
     return 0;
 }

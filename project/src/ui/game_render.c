@@ -56,6 +56,16 @@ void draw_rectangle_bb(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
     }
 }
 
+void video_draw_selection_box(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+    const uint32_t color = 0xF2B51F;
+    const uint16_t thickness = 4;
+
+    draw_rectangle_bb(x, y, width, thickness, color);
+    draw_rectangle_bb(x, y + height - thickness, width, thickness, color);
+    draw_rectangle_bb(x, y, thickness, height, color);
+    draw_rectangle_bb(x + width - thickness, y, thickness, height, color);
+}
+
 void video_draw_net() {
     /* Net hitbox hidden — uncomment to debug:
     uint16_t net_width = 10;
@@ -115,6 +125,7 @@ static uint8_t glyph_row(char c, int row) {
         {7, 5, 7, 1, 7}
     };
     static const uint8_t colon[5] = {0, 2, 0, 2, 0};
+    static const uint8_t slash[5] = {1, 1, 2, 4, 4};
     static const uint8_t plus[5] = {0, 2, 7, 2, 0};
 
     if (c >= '0' && c <= '9') {
@@ -122,6 +133,9 @@ static uint8_t glyph_row(char c, int row) {
     }
     if (c == ':') {
         return colon[row];
+    }
+    if (c == '/') {
+        return slash[row];
     }
     if (c == '+') {
         return plus[row];
@@ -201,7 +215,6 @@ static uint8_t wide_glyph_row(char c, int row) {
     if (c >= 'A' && c <= 'Z') {
         return letters[c - 'A'][row];
     }
-
     return 0;
 }
 
@@ -267,10 +280,9 @@ void video_draw_character_select(int selected_p1, int selected_p2, bool choosing
 
     draw_xpm(character_select_pixmap, 0, 0);
 
-    if (choosing_p2) {
-        draw_rectangle_bb(350, 142, 330, 56, 0x4B260C);
-        draw_centered_wide_text("PLAYER TWO", 154, 5, 0xF2B51F);
-    }
+    draw_rectangle_bb(350, 142, 330, 56, 0x4B260C);
+    draw_centered_wide_text(choosing_p2 ? "PLAYER TWO" : "PLAYER ONE",
+                            154, 5, 0xF2B51F);
 
     for (int i = 0; i < PLAYER_CHARACTER_COUNT; i++) {
         uint16_t x = character_card_x[i];
@@ -319,6 +331,94 @@ void video_draw_hud(int score_left, int score_right, int seconds_left) {
     uint16_t x = (h_res - text_width(hud, scale)) / 2;
     draw_text(hud, x + 2, y + 2, scale, 0x000000);
     draw_text(hud, x, y, scale, 0xFFFFFF);
+}
+
+void video_draw_rtc_date(const rtc_date *date) {
+    char date_text[9];
+    char time_text[6];
+    uint16_t scale = 4;
+    uint16_t date_w;
+    uint16_t time_w;
+    uint16_t x;
+    uint16_t y = 28;
+
+    if (date == NULL) {
+        return;
+    }
+
+    snprintf(date_text, sizeof(date_text), "%02u/%02u/%02u",
+             date->day, date->month, date->year);
+    snprintf(time_text, sizeof(time_text), "%02u:%02u",
+             date->hours, date->minutes);
+
+    date_w = text_width(date_text, scale);
+    time_w = text_width(time_text, scale);
+    x = h_res - date_w - 30;
+
+    draw_rectangle_bb(x - 12, y - 10, date_w + 24, 58, 0x17120A);
+    draw_text(date_text, x + 2, y + 2, scale, 0x000000);
+    draw_text(date_text, x, y, scale, 0xFFFFFF);
+
+    x = h_res - time_w - 30;
+    draw_text(time_text, x + 2, y + 28, scale, 0x000000);
+    draw_text(time_text, x, y + 26, scale, 0xF2B51F);
+}
+
+void video_draw_end_overlay(int score_left, int score_right) {
+    char score[8];
+    uint16_t score_scale = 12;
+    uint16_t score_w;
+    uint16_t score_x;
+    uint16_t score_y = 148;
+
+    snprintf(score, sizeof(score), "%d   %d", score_left, score_right);
+    score_w = text_width(score, score_scale);
+    score_x = (h_res - score_w) / 2;
+
+    draw_rectangle_bb(score_x - 24, score_y - 18, score_w + 48, 5 * score_scale + 36, 0x17120A);
+    draw_rectangle_bb(score_x - 24, score_y - 18, score_w + 48, 4, 0xD58C2A);
+    draw_rectangle_bb(score_x - 24, score_y + (5 * score_scale) + 14, score_w + 48, 4, 0xD58C2A);
+    draw_rectangle_bb(score_x - 24, score_y - 18, 4, 5 * score_scale + 36, 0xD58C2A);
+    draw_rectangle_bb(score_x + score_w + 20, score_y - 18, 4, 5 * score_scale + 36, 0xD58C2A);
+
+    draw_text(score, score_x + 4, score_y + 4, score_scale, 0x000000);
+    draw_text(score, score_x, score_y, score_scale, 0xFFFFFF);
+}
+
+void video_draw_countdown(int value) {
+    uint16_t scale;
+    uint16_t text_w;
+    uint16_t text_h;
+    uint16_t x;
+    uint16_t y;
+
+    if (value > 0) {
+        char digit[2];
+        digit[0] = (char)('0' + value);
+        digit[1] = '\0';
+        scale = 28;
+        text_w = text_width(digit, scale);
+        text_h = 5 * scale;
+        x = (h_res - text_w) / 2;
+        y = (v_res - text_h) / 2;
+
+        draw_rectangle_bb(x - 28, y - 24, text_w + 56, text_h + 48, 0x120508);
+        draw_rectangle_bb(x - 20, y - 16, text_w + 40, text_h + 32, 0x381004);
+        draw_text(digit, x + 4, y + 4, scale, 0x000000);
+        draw_text(digit, x, y, scale, 0xFFFFFF);
+    } else {
+        const char *text = "START";
+        scale = 12;
+        text_w = wide_text_width(text, scale);
+        text_h = 7 * scale;
+        x = (h_res - text_w) / 2;
+        y = (v_res - text_h) / 2;
+
+        draw_rectangle_bb(x - 28, y - 24, text_w + 56, text_h + 48, 0x120508);
+        draw_rectangle_bb(x - 20, y - 16, text_w + 40, text_h + 32, 0x381004);
+        draw_wide_text(text, x + 4, y + 4, scale, 0x000000);
+        draw_wide_text(text, x, y, scale, 0xFFFFFF);
+    }
 }
 
 static void draw_cursor_pixel(int x, int y, uint32_t color) {
