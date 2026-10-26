@@ -1,81 +1,87 @@
-# Template
+# 🏐 Volley Master
 
+A two-player arcade volleyball game for **Minix**, built as the final project for **LCOM** (Laboratório de Computadores) at FEUP. One player uses the keyboard, the other uses the mouse, both at the same time.
 
+Inspired by *Head Soccer*, the game puts two players on opposite sides of a court, each trying to make the ball land on the other's side.
 
-## Getting started
+| Main Menu                                                                       | Gameplay                                                                      |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| <img src="docs/images/main_menu.png" alt="Volley Master main menu" width="400"> | <img src="docs/images/gameplay.png" alt="Volley Master gameplay" width="400"> |
 
-Welcome to your LCOM code repository. This is where your team should deliver all the required artifacts, including code.
-Please take your time to get acquainted with GitLab and its functionalities. The way your team uses Git and GitLab to collaborate will be evaluated. 
+## Features
 
-## Boilerplate
+- **Dual input:** Player 1 uses the keyboard and Player 2 uses the mouse, concurrently, through two independent input pipelines.
+- **Character selection:** a pool of six characters. Player 1 picks first and that character is locked for Player 2.
+- **Field selection:** four environments (Beach, Desert, Ice, Jungle).
+- **Match flow:** 3 → 2 → 1 → START countdown, 60-second timed matches, and **sudden death** on ties.
+- **Menus:** Main Menu, Pause Menu, How To Play and Victory screens. Every menu works with keyboard and mouse.
+- **Custom 2D physics:** gravity, hitbox-based ball–player rebounds, and a net that distinguishes side and top impacts.
+- **Real-Time Clock:** current date and time displayed in the UI.
 
-In this repository, you will find some pre-loaded files and an initial setup of your team's project board. 
-Along the semester, you will be adding files and folders to this repository.
-Make sure you expand on the issues and milestones for your project, helping your team to coordinate and meet all the deadlines. Major deadlines are already setup but you should add your own sub-issues, additional issues, and deadlines. 
+## Controls
 
-## GitLab Setup 
+| Action | Player 1 (Keyboard) | Player 2 (Mouse) |
+|---|---|---|
+| Move | `A` / `D` | Move mouse horizontally |
+| Jump | `W` | Left click |
+| Menu navigation | Keyboard | Cursor |
+| Confirm | `ENTER` | Left click |
+| Pause / Back | `ESC` | – |
 
-### Add your files
+## Hardware Used
 
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+| Device | Role |
+|---|---|
+| **Timer** (60 Hz) | Drives the game loop, countdown, match timer and sudden death |
+| **Keyboard (KBC)** | Player 1 controls and menu navigation |
+| **Mouse (PS/2)** | Player 2 controls and menu navigation. 3-byte packets with sync-bit validation |
+| **Graphics Card** | VBE mode `0x118` (1024×768) with double buffering |
+| **RTC** | Date and time shown in the UI |
+
+## Architecture
+
+The project is split into three layers (`devices`, `game`, `ui`), coordinated by `proj.c`, which handles initialization, device setup, the main interrupt loop and cleanup. XPM assets live in `images`.
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.up.pt/lcom-26/template.git
-git branch -M main
-git push -uf origin main
+project/
+├── proj.c        # Init, main interrupt loop (driver_receive), cleanup
+├── proj.h
+├── Makefile
+└── src/
+    ├── devices/  # Hardware drivers: keyboard, mouse, RTC
+    ├── game/     # Logic: game (state machine, score, match flow), player, ball
+    ├── ui/       # Rendering: menus, sprites, HUD, asset management
+    └── images/   # XPM assets (menus, characters, fields, victory screens)
 ```
 
-### Integrate with your tools
+**Design decisions**
 
-* [Set up project integrations](https://gitlab.up.pt/lcom-26/template/-/settings/integrations)
+- **Interrupt-driven loop:** the keyboard and mouse interrupts only write to input state structures. Physics, collisions, score updates and state transitions all run on Timer ticks (`game_update()` then `game_render()`), so gameplay speed doesn't depend on input frequency.
+- **Central state machine:** it handles all transitions between menus and gameplay.
+- **Double buffering:** frames are drawn to a back buffer and copied to VRAM only when complete, which avoids flickering.
+- **XPM sprites with transparency:** characters can be mirrored horizontally, so one asset serves both facing directions.
+- **Asset optimization:** palette reduction and indexed color conversion cut the assets from ~86 MB to ~10 MB, which improved compilation time and memory use under Minix.
 
-### Collaborate with your team
+## Building and Running
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+> Volley Master runs inside **Minix** (typically in a VM), not on a regular host OS.
 
-### Test and Deploy
+```bash
+cd project
+make
+lcom_run proj
+```
 
-Use the built-in continuous integration in GitLab.
+## Authors
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+LCOM 2025/26 · Class 2LEIC15 · Group 5
 
-***
+| Name | Contact |
+|---|---|
+| David Pinto | up202404233@up.pt |
+| João Lage | up202406458@up.pt |
+| Luís Torrão | up202406471@up.pt |
+| Mafalda Pacheco | up202406162@up.pt |
 
 ## License
-For open source projects, say how it is licensed.
-
-## Declaration of Responsible AI Use
-
-We declare that:
-
-1. We are responsible for all code and documentation in this repository, and we understand that we must be able to explain and justify any part of it on request.  
-2. We have used AI-based tools (e.g., code assistants, chatbots, or generators) only to support my learning, not to bypass the intended learning outcomes or any assessment rules.  
-3. Wherever AI tools contributed to this work, we have:  
-   - Used them within the limits set by the course policies and institutional regulations.  
-   - Reviewed, tested, and, where necessary, edited the outputs, taking full responsibility for their correctness, originality, and legality.  
-   - Ensured that no confidential, personal, or sensitive data were shared with AI tools.  
-4. We have not used AI tools to generate complete solutions that we present as entirely our own unaided work, and we have avoided plagiarism, whether from AI outputs or other sources.  
-5. If asked, we will provide details of which tools we used, for which files or parts of the project, and how we verified and adapted their outputs.
-
-Signed: `David Pinto`, `João Lage`, `Luís Torrão`, `Mafalda Pacheco`  
-Date: `24/02/2026`
-
-## Authors and acknowledgment
-
-LCOM Project for group GRUPO_2LEIC15_5.
-Group members:
-
-David Pinto (up202404233@up.pt)
-João Lage (up202406458@up.pt)
-Luís Torrão (up202406471@up.pt)
-Mafalda Pacheco (up202406162@up.pt)
+All rights reserved. This project was developed for academic purposes at FEUP.
