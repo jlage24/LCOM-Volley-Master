@@ -6,7 +6,7 @@ Inspired by *Head Soccer*, the game puts two players on opposite sides of a cour
 
 | Main Menu                                                                       | Gameplay                                                                      |
 | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| <img src="docs/images/main_menu.png" alt="Volley Master main menu" width="400"> | <img src="docs/images/gameplay.png" alt="Volley Master gameplay" width="400"> |
+| <img width="1264" height="934" alt="main-menu" src="https://github.com/user-attachments/assets/ce68f5c3-a7e5-45fe-ad01-8e278f0bb412" />| <img width="1264" height="940" alt="gameplay" src="https://github.com/user-attachments/assets/476fce2f-1301-48fe-9d4f-51d49eeaaaaf" /> |
 
 ## Features
 
